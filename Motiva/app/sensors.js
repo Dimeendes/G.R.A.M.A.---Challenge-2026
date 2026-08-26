@@ -1,14 +1,43 @@
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from './context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import { getGrassHeightStatus } from './data/sensorsData';
 import { useSensors } from './context/SensorsContext';
 
+const SEARCH_OPTIONS = [
+  { key: 'id', label: 'ID' },
+  { key: 'rodovia', label: 'Rodovia' },
+  { key: 'grama', label: 'Grama' },
+];
+
 export default function Sensors() {
   const router = useRouter();
   const { logout } = useAuth();
   const { sensors } = useSensors();
+  const [searchMode, setSearchMode] = useState('id');
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const filteredSensors = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+
+    if (!query) {
+      return sensors;
+    }
+
+    return sensors.filter((sensor) => {
+      if (searchMode === 'id') {
+        return String(sensor.id).toLowerCase().includes(query);
+      }
+
+      if (searchMode === 'rodovia') {
+        return sensor.highway?.toLowerCase().includes(query);
+      }
+
+      return String(sensor.grassHeight).toLowerCase().includes(query);
+    });
+  }, [searchMode, searchTerm, sensors]);
 
   return (
     <>
@@ -19,9 +48,49 @@ export default function Sensors() {
 
         <View style={styles.content}>
           <Text style={styles.title}>Sensores</Text>
-          <Text style={styles.subtitle}>{sensors.length} sensores monitorados</Text>
+          <Text style={styles.subtitle}>
+            {filteredSensors.length} de {sensors.length} sensores monitorados
+          </Text>
 
-          {sensors.map((sensor) => {
+          <View style={styles.searchContainer}>
+            <View style={styles.searchModeRow}>
+              {SEARCH_OPTIONS.map((option) => {
+                const isSelected = searchMode === option.key;
+
+                return (
+                  <TouchableOpacity
+                    key={option.key}
+                    style={[styles.filterButton, isSelected && styles.filterButtonActive]}
+                    onPress={() => setSearchMode(option.key)}
+                  >
+                    <Text style={[styles.filterButtonText, isSelected && styles.filterButtonTextActive]}>
+                      {option.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            <View style={styles.searchInputContainer}>
+              <Ionicons name="search-outline" size={18} color="#666" />
+              <TextInput
+                style={styles.searchInput}
+                placeholder={
+                  searchMode === 'id'
+                    ? 'Buscar por ID do sensor'
+                    : searchMode === 'rodovia'
+                      ? 'Buscar por rodovia'
+                      : 'Buscar por altura da grama'
+                }
+                placeholderTextColor="#666"
+                value={searchTerm}
+                onChangeText={setSearchTerm}
+                keyboardType={searchMode === 'id' ? 'numeric' : 'default'}
+              />
+            </View>
+          </View>
+
+          {filteredSensors.map((sensor) => {
             const status = getGrassHeightStatus(sensor.grassHeight);
 
             return (
@@ -50,15 +119,17 @@ export default function Sensors() {
               </View>
             );
           })}
+
+          {filteredSensors.length === 0 && (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyStateText}>Nenhum sensor encontrado com esse filtro.</Text>
+            </View>
+          )}
         </View>
       </ScrollView>
 
       <View style={styles.navigationContainer}>
         <View style={styles.navigationBar}>
-          <TouchableOpacity style={styles.navButton} onPress={() => router.push('/map')}>
-            <Ionicons name="map-outline" size={24} color="#000" />
-            <Text style={styles.iconText}>Mapa</Text>
-          </TouchableOpacity>
 
           <TouchableOpacity style={styles.navButton}>
             <View style={styles.activeIcon}>
@@ -101,6 +172,14 @@ const styles = StyleSheet.create({
   content:             { padding: 16 },
   title:               { fontSize: 24, fontWeight: 'bold', color: '#333', marginBottom: 4 },
   subtitle:            { fontSize: 14, color: '#666', marginBottom: 16 },
+  searchContainer:     { backgroundColor: '#fff', borderRadius: 16, padding: 12, marginBottom: 16, borderWidth: 1, borderColor: '#e5e7eb', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 4, elevation: 2 },
+  searchModeRow:       { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
+  filterButton:        { flex: 1, backgroundColor: '#f3f4f6', borderRadius: 10, paddingVertical: 8, marginHorizontal: 4, alignItems: 'center' },
+  filterButtonActive:  { backgroundColor: '#5E22F3' },
+  filterButtonText:    { color: '#333', fontWeight: '600' },
+  filterButtonTextActive: { color: '#fff', fontWeight: '600' },
+  searchInputContainer:{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#f5f5f5', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10 },
+  searchInput:         { flex: 1, marginLeft: 8, color: '#333', fontSize: 15 },
   card:                { backgroundColor: '#d0d0d0', borderRadius: 16, borderWidth: 1, borderColor: '#dfdfdf', padding: 16, marginBottom: 12 },
   cardHeader:          { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   cardTitle:           { fontSize: 18, fontWeight: 'bold', color: '#333' },
@@ -108,6 +187,8 @@ const styles = StyleSheet.create({
   badgeText:           { color: '#fff', fontSize: 12, fontWeight: 'bold' },
   infoRow:             { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
   infoText:            { fontSize: 15, color: '#333' },
+  emptyState:          { backgroundColor: '#fff', borderRadius: 14, padding: 18, alignItems: 'center', borderWidth: 1, borderColor: '#e5e7eb' },
+  emptyStateText:      { color: '#666', fontSize: 14, textAlign: 'center' },
   navigationContainer: { position: 'absolute', bottom: 15, left: 15, right: 15 },
   navigationBar:       { height: 75, backgroundColor: '#d0d0d0', borderRadius: 25, borderWidth: 1, borderColor: '#dfdfdf', flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', elevation: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 6 },
   navButton:           { flex: 1, alignItems: 'center', justifyContent: 'center' },

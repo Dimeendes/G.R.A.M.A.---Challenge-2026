@@ -42,9 +42,6 @@ export default function Home() {
         <View style={styles.home}>
           <Text style={styles.title}>Painel Geral</Text>
           <Text style={styles.subtitle}>Monitoramento rodoviário em tempo real</Text>
-          <Text style={styles.sourceText}>
-            Fonte: {isLoading ? 'Carregando...' : source === 'esp32' ? 'ESP32' : 'Dados mocados'}
-          </Text>
 
           <View style={styles.summaryPanel}>
             <View style={styles.summaryItem}>
@@ -63,11 +60,6 @@ export default function Home() {
               <Text style={styles.summaryLabel}>Alertas</Text>
             </View>
           </View>
-
-          <TouchableOpacity style={styles.cutButton} onPress={openModal}>
-            <Ionicons name="cut-outline" size={22} color="#fff" />
-            <Text style={styles.cutButtonText}>Simular corte de grama</Text>
-          </TouchableOpacity>
 
           <Text style={styles.sectionTitle}>Rodovias monitoradas</Text>
 
@@ -153,11 +145,6 @@ export default function Home() {
 
       <View style={styles.navigationContainer}>
         <View style={styles.navigationBar}>
-          <TouchableOpacity style={styles.navButton} onPress={() => router.push('/map')}>
-            <Ionicons name="map-outline" size={24} color="#000" />
-            <Text style={styles.iconText}>Mapa</Text>
-          </TouchableOpacity>
-
           <TouchableOpacity style={styles.navButton} onPress={() => router.push('/sensors')}>
             <Ionicons name="radio-outline" size={24} color="#000" />
             <Text style={styles.iconText}>Sensores</Text>

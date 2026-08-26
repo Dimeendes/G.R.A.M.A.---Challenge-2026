@@ -66,10 +66,6 @@ export default function Alertas() {
 
       <View style={styles.navigationContainer}>
         <View style={styles.navigationBar}>
-          <TouchableOpacity style={styles.navButton} onPress={() => router.push('/map')}>
-            <Ionicons name="map-outline" size={24} color="#000" />
-            <Text style={styles.iconText}>Mapa</Text>
-          </TouchableOpacity>
 
           <TouchableOpacity style={styles.navButton} onPress={() => router.push('/sensors')}>
             <Ionicons name="radio-outline" size={24} color="#000" />

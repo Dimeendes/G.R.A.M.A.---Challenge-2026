@@ -1,22 +1,62 @@
 export const CRITICAL_HEIGHT = 25;
 export const WARNING_HEIGHT = 18;
 
-export const initialSensors = [
-  { id: 1, highway: 'BR-101', km: 12.5, grassHeight: 8 },
-  { id: 2, highway: 'BR-101', km: 28.0, grassHeight: 14 },
-  { id: 3, highway: 'BR-101', km: 45.3, grassHeight: 27 },
-  { id: 4, highway: 'BR-116', km: 5.2, grassHeight: 27 },
-  { id: 5, highway: 'BR-116', km: 18.7, grassHeight: 31 },
-  { id: 6, highway: 'BR-116', km: 32.1, grassHeight: 9 },
-  { id: 7, highway: 'BR-116', km: 50.0, grassHeight: 22 },
-  { id: 8, highway: 'SP-348', km: 10.0, grassHeight: 6 },
-  { id: 9, highway: 'SP-348', km: 25.4, grassHeight: 29 },
-  { id: 10, highway: 'SP-348', km: 40.8, grassHeight: 15 },
-  { id: 11, highway: 'BR-381', km: 8.3, grassHeight: 19 },
-  { id: 12, highway: 'BR-381', km: 22.6, grassHeight: 33 },
-];
+import { useEffect, useState } from "react";
+import { FlatList, Text, View } from "react-native";
 
-export function getHighwaysSummary(sensorList) {
+export default function App() {
+  const [sensoresAPI, setSensoresAPI] = useState([]);
+  //const [dados, setDados] = useState(initialSensors);
+
+  useEffect(() => {
+    async function carregarDados() {
+      try {
+        const resposta = await fetch(
+          "http://10.123.33.196:5000/dados"
+        );
+
+        const resultado = await resposta.json();
+
+        setSensoresAPI(resultado)
+
+        
+      } catch (erro) {
+        console.error("Erro ao buscar dados:", erro);
+      }
+    }
+
+    carregarDados();
+  }, []);
+
+  const sensores = [
+    ...initialSensors,
+    ...sensoresAPI
+  ]
+
+  if (!dados) {
+    return (
+      <View>
+        <Text>Carregando dados...</Text>
+      </View>
+    );
+  }
+
+  return (
+    <FlatList
+      data = {sensores}
+      keyExtractor={(item, index) => `${item.id}-${index}`}
+      renderItem={({item}) => (
+        <View>
+          <Text>Rodovia: {item.highWay}</Text>
+          <Text>KM: {item.km}</Text>
+          <Text>Altura da grama: {item.grassHeight} cm</Text>
+        </View>
+    )}
+    />
+  );
+}
+
+export function getHighwaysSummary(sensorList = []) {
   const highways = {};
 
   sensorList.forEach((sensor) => {
@@ -30,14 +70,20 @@ export function getHighwaysSummary(sensorList) {
     }
 
     const highway = highways[sensor.highway];
+
     highway.sensors.push(sensor);
     highway.kmMin = Math.min(highway.kmMin, sensor.km);
     highway.kmMax = Math.max(highway.kmMax, sensor.km);
   });
 
   return Object.values(highways).map((highway) => {
-    const heights = highway.sensors.map((s) => s.grassHeight);
-    const alerts = highway.sensors.filter((s) => s.grassHeight >= CRITICAL_HEIGHT).length;
+    const heights = highway.sensors.map(
+      (sensor) => sensor.grassHeight
+    );
+
+    const alerts = highway.sensors.filter(
+      (sensor) => sensor.grassHeight >= CRITICAL_HEIGHT
+    ).length;
 
     return {
       name: highway.name,
@@ -45,7 +91,9 @@ export function getHighwaysSummary(sensorList) {
       kmMin: highway.kmMin,
       kmMax: highway.kmMax,
       lengthKm: highway.kmMax - highway.kmMin,
-      averageHeight: Math.round(heights.reduce((a, b) => a + b, 0) / heights.length),
+      averageHeight: Math.round(
+        heights.reduce((a, b) => a + b, 0) / heights.length
+      ),
       alerts,
     };
   });
@@ -53,7 +101,9 @@ export function getHighwaysSummary(sensorList) {
 
 export function getAlerts(sensorList) {
   return sensorList
-    .filter((sensor) => sensor.grassHeight >= CRITICAL_HEIGHT)
+    .filter(
+      (sensor) => sensor.grassHeight >= CRITICAL_HEIGHT
+    )
     .map((sensor) => ({
       id: sensor.id,
       sensorId: sensor.id,
@@ -65,7 +115,22 @@ export function getAlerts(sensorList) {
 }
 
 export function getGrassHeightStatus(height) {
-  if (height >= CRITICAL_HEIGHT) return { label: 'Crítico', color: '#EF4444' };
-  if (height >= WARNING_HEIGHT) return { label: 'Atenção', color: '#F59E0B' };
-  return { label: 'Normal', color: '#22C55E' };
+  if (height >= CRITICAL_HEIGHT) {
+    return {
+      label: "Crítico",
+      color: "#EF4444",
+    };
+  }
+
+  if (height >= WARNING_HEIGHT) {
+    return {
+      label: "Atenção",
+      color: "#F59E0B",
+    };
+  }
+
+  return {
+    label: "Normal",
+    color: "#22C55E",
+  };
 }

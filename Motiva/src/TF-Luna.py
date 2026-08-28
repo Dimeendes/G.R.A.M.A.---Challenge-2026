@@ -5,6 +5,7 @@ from pathlib import Path
 from flask import Flask, jsonify
 from flask_cors import CORS
 import threading
+from datetime import datetime
  
  
 # ============================================================
@@ -164,9 +165,10 @@ def receber_dados():
                 "id": id_sensor,
                 "highWay": highway,
                 "km": km,
-                "grassHeight": grass_height
+                "grassHeight": grass_height,
+                "TimeStamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             }
- 
+    
             # ================================================
             # SALVA JSON
             # ================================================

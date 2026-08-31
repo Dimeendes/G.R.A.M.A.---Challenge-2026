@@ -27,7 +27,11 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "react-native-maps",
+      {
+        "androidGoogleMapsApiKey": "AIzaSyBeXVl0CYc2N0Tr9plFW4OJGNBF8u62DQA"
+      }
     ]
   }
 }

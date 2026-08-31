@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "react-native-streetview": "^1.4.5"
+  }
+}

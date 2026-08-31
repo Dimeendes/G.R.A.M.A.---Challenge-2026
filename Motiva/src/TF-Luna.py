@@ -5,6 +5,7 @@ from pathlib import Path
 from flask import Flask, jsonify
 from flask_cors import CORS
 import threading
+from datetime import datetime
  
  
 # ============================================================
@@ -63,7 +64,7 @@ def encontrar_porta():
     for porta in portas:
         print(f"  {porta.device} - {porta.description}")
  
-    return portas[2].device
+    return portas[0].device
  
  
 def receber_dados():
@@ -164,7 +165,8 @@ def receber_dados():
                 "id": id_sensor,
                 "highWay": highway,
                 "km": km,
-                "grassHeight": grass_height
+                "grassHeight": grass_height,
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             }
  
             # ================================================

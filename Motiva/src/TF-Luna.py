@@ -166,9 +166,9 @@ def receber_dados():
                 "highWay": highway,
                 "km": km,
                 "grassHeight": grass_height,
-                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                "TimeStamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             }
- 
+    
             # ================================================
             # SALVA JSON
             # ================================================

@@ -195,14 +195,9 @@ def encontrar_porta():
     print("Portas encontradas:")
 
     for porta in portas:
-
-        print(
-            f"  {porta.device} - {porta.description}"
-        )
+        print(f"  {porta.device} - {porta.description}")
 
     return portas[0].device
-
-
 def receber_dados():
 
     porta = encontrar_porta()

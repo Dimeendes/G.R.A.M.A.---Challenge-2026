@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { useAuth } from './context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 
+
+
 export default function Login() {
   const router = useRouter();
   const [username, setUsername] = useState('');
@@ -13,6 +15,9 @@ export default function Login() {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const { auth } = useAuth();
 
+
+  require('dotenv').config();
+  
   async function handleLogin() {
     setHasUsernameError(false);
     setHasPasswordError(false);

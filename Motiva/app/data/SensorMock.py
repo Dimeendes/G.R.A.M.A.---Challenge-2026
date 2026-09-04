@@ -2,70 +2,70 @@ import requests
 
 Sensores = {
     'ID02': {
-        'ID': 2,
-        'Highway': 'BR-101',
-        'KM': 28.0,
-        'GrassHeight': 14
+        'id': 2,
+        'highWay': 'BR-101',
+        'km': 28.0,
+        'grassHeight': 14
     },
     'ID03': {
-        'ID': 3,
-        'Highway': 'BR-101',
-        'KM': 45.3,
-        'GrassHeight': 27
+        'id': 3,
+        'highWay': 'BR-101',
+        'km': 45.3,
+        'grassHeight': 27
     },
     'ID04': {
-        'ID': 4,
-        'Highway': 'BR-116',
-        'KM': 5.2,
-        'GrassHeight': 27
+        'id': 4,
+        'highWay': 'BR-116',
+        'km': 5.2,
+        'grassHeight': 27
     },
     'ID05': {
-        'ID': 5,
-        'Highway': 'BR-116',
-        'KM': 18.7,
-        'GrassHeight': 31
+        'id': 5,
+        'highWay': 'BR-116',
+        'km': 18.7,
+        'grassHeight': 31
     },
     'ID06': {
-        'ID': 6,
-        'Highway': 'BR-116',
-        'KM': 32.1,
-        'GrassHeight': 9
+        'id': 6,
+        'highWay': 'BR-116',
+        'km': 32.1,
+        'grassHeight': 9
     },
     'ID07': {
-        'ID': 7,
-        'Highway': 'BR-116',
-        'KM': 50.0,
-        'GrassHeight': 22
+        'id': 7,
+        'highWay': 'BR-116',
+        'km': 50.0,
+        'grassHeight': 22
     },
     'ID08': {
-        'ID': 8,
-        'Highway': 'SP-348',
-        'KM': 10.0,
-        'GrassHeight': 6
+        'id': 8,
+        'highWay': 'SP-348',
+        'km': 10.0,
+        'grassHeight': 6
     },
     'ID09': {
-        'ID': 9,
-        'Highway': 'SP-348',
-        'KM': 25.4,
-        'GrassHeight': 29
+        'id': 9,
+        'highWay': 'SP-348',
+        'km': 25.4,
+        'grassHeight': 29
     },
     'ID10': {
-        'ID': 10,
-        'Highway': 'SP-348',
-        'KM': 40.8,
-        'GrassHeight': 15
+        'id': 10,
+        'highWay': 'SP-348',
+        'km': 40.8,
+        'grassHeight': 15
     },
     'ID11': {
-        'ID': 11,
-        'Highway': 'BR-381',
-        'KM': 8.3,
-        'GrassHeight': 19
+        'id': 11,
+        'highWay': 'BR-381',
+        'km': 8.3,
+        'grassHeight': 19
     },
     'ID12': {
-        'ID': 12,
-        'Highway': 'BR-381',
-        'KM': 22.6,
-        'GrassHeight': 33
+        'id': 12,
+        'highWay': 'BR-381',
+        'km': 22.6,
+        'grassHeight': 33
     }
 }
 

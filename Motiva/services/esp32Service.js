@@ -1,6 +1,7 @@
 const DEFAULT_API_URL =
   process.env.EXPO_PUBLIC_ESP32_URL ||
-  'http://10.123.33.196:5000';
+  'http://10.0.2.2:5000';
+  //'http://10.123.33.196:5000';
 
 const DEFAULT_TIMEOUT_MS = 10000;
 

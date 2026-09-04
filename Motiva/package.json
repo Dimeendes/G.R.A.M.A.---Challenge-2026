@@ -7,11 +7,11 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "dev": "concurrently \"python TF-Luna.py\"  \"python SensorMock.py\" \"npx expo start\""
+    "dev": "start cmd /k \"py src/TF-Luna.py\" && start cmd /k \"py app/data/SensorMock.py\" && start cmd /k \"npx expo start\""
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
-    "dotenv": "^17.4.2",
+    "dotenv": "^16.4.7",
     "expo": "~54.0.34",
     "expo-router": "~6.0.24",
     "expo-status-bar": "~3.0.9",
@@ -33,3 +33,4 @@
   "devDependencies": {
     "concurrently": "^10.0.5"
   }
+}

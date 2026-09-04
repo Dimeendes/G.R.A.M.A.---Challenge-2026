@@ -420,29 +420,24 @@ if __name__ == "__main__":
     # INICIA FLASK
     # ================================================
 
-    servidor = threading.Thread(
-        target=lambda: app.run(
+    if __name__ == "__main__":
+        print("================================")
+        print("API iniciada")
+        print(f"Porta: {API_PORT}")
+        print("GET: /dados")
+        print("POST: /dados")
+        print("================================")
+
+        serial_thread = threading.Thread(
+            target=receber_dados,
+            daemon=True
+        )
+
+        serial_thread.start()
+
+        app.run(
             host="0.0.0.0",
             port=API_PORT,
             debug=False,
             use_reloader=False
         )
-    )
-
-    servidor.daemon = True
-    servidor.start()
-
-    print()
-    print("================================")
-    print("API iniciada")
-    print(f"Porta: {API_PORT}")
-    print("GET:  /dados")
-    print("POST: /dados")
-    print("================================")
-    print()
-
-    # ================================================
-    # INICIA ESP32
-    # ================================================
-
-    receber_dados()

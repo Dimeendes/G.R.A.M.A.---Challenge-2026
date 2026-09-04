@@ -14,9 +14,6 @@ export default function Login() {
   const [hasPasswordError, setHasPasswordError] = useState(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const { auth } = useAuth();
-
-
-  require('dotenv').config();
   
   async function handleLogin() {
     setHasUsernameError(false);

@@ -1,5 +1,5 @@
-export const CRITICAL_HEIGHT = 25;
-export const WARNING_HEIGHT = 18;
+export const CRITICAL_HEIGHT = 30;
+export const WARNING_HEIGHT = 10;
 
 import { useEffect, useState } from "react";
 import { FlatList, Text, View } from "react-native";

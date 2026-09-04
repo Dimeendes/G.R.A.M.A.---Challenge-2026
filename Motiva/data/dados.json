@@ -1,7 +1,310 @@
-{
-    "id": 1,
-    "highWay": "BR-101",
-    "km": 12,
-    "grassHeight": 160,
-    "timestamp": "2026-08-28 08:27:50"
-}
+[
+    {
+        "id": 2,
+        "highWay": "BR-101",
+        "km": 28.0,
+        "grassHeight": 14,
+        "TimeStamp": "2026-09-04 08:55:45"
+    },
+    {
+        "id": 3,
+        "highWay": "BR-101",
+        "km": 45.3,
+        "grassHeight": 27,
+        "TimeStamp": "2026-09-04 08:55:45"
+    },
+    {
+        "id": 4,
+        "highWay": "BR-116",
+        "km": 5.2,
+        "grassHeight": 27,
+        "TimeStamp": "2026-09-04 08:55:45"
+    },
+    {
+        "id": 5,
+        "highWay": "BR-116",
+        "km": 18.7,
+        "grassHeight": 31,
+        "TimeStamp": "2026-09-04 08:55:45"
+    },
+    {
+        "id": 6,
+        "highWay": "BR-116",
+        "km": 32.1,
+        "grassHeight": 9,
+        "TimeStamp": "2026-09-04 08:55:45"
+    },
+    {
+        "id": 7,
+        "highWay": "BR-116",
+        "km": 50.0,
+        "grassHeight": 22,
+        "TimeStamp": "2026-09-04 08:55:45"
+    },
+    {
+        "id": 8,
+        "highWay": "SP-348",
+        "km": 10.0,
+        "grassHeight": 6,
+        "TimeStamp": "2026-09-04 08:55:45"
+    },
+    {
+        "id": 9,
+        "highWay": "SP-348",
+        "km": 25.4,
+        "grassHeight": 29,
+        "TimeStamp": "2026-09-04 08:55:45"
+    },
+    {
+        "id": 10,
+        "highWay": "SP-348",
+        "km": 40.8,
+        "grassHeight": 15,
+        "TimeStamp": "2026-09-04 08:55:45"
+    },
+    {
+        "id": 11,
+        "highWay": "BR-381",
+        "km": 8.3,
+        "grassHeight": 19,
+        "TimeStamp": "2026-09-04 08:55:45"
+    },
+    {
+        "id": 12,
+        "highWay": "BR-381",
+        "km": 22.6,
+        "grassHeight": 33,
+        "TimeStamp": "2026-09-04 08:55:45"
+    },
+    {
+        "id": 2,
+        "highWay": "BR-101",
+        "km": 28.0,
+        "grassHeight": 14,
+        "TimeStamp": "2026-09-04 09:00:07"
+    },
+    {
+        "id": 3,
+        "highWay": "BR-101",
+        "km": 45.3,
+        "grassHeight": 27,
+        "TimeStamp": "2026-09-04 09:00:07"
+    },
+    {
+        "id": 4,
+        "highWay": "BR-116",
+        "km": 5.2,
+        "grassHeight": 27,
+        "TimeStamp": "2026-09-04 09:00:07"
+    },
+    {
+        "id": 5,
+        "highWay": "BR-116",
+        "km": 18.7,
+        "grassHeight": 31,
+        "TimeStamp": "2026-09-04 09:00:07"
+    },
+    {
+        "id": 6,
+        "highWay": "BR-116",
+        "km": 32.1,
+        "grassHeight": 9,
+        "TimeStamp": "2026-09-04 09:00:07"
+    },
+    {
+        "id": 7,
+        "highWay": "BR-116",
+        "km": 50.0,
+        "grassHeight": 22,
+        "TimeStamp": "2026-09-04 09:00:07"
+    },
+    {
+        "id": 8,
+        "highWay": "SP-348",
+        "km": 10.0,
+        "grassHeight": 6,
+        "TimeStamp": "2026-09-04 09:00:07"
+    },
+    {
+        "id": 9,
+        "highWay": "SP-348",
+        "km": 25.4,
+        "grassHeight": 29,
+        "TimeStamp": "2026-09-04 09:00:07"
+    },
+    {
+        "id": 10,
+        "highWay": "SP-348",
+        "km": 40.8,
+        "grassHeight": 15,
+        "TimeStamp": "2026-09-04 09:00:07"
+    },
+    {
+        "id": 11,
+        "highWay": "BR-381",
+        "km": 8.3,
+        "grassHeight": 19,
+        "TimeStamp": "2026-09-04 09:00:07"
+    },
+    {
+        "id": 12,
+        "highWay": "BR-381",
+        "km": 22.6,
+        "grassHeight": 33,
+        "TimeStamp": "2026-09-04 09:00:07"
+    },
+    {
+        "id": 2,
+        "highWay": "BR-101",
+        "km": 28.0,
+        "grassHeight": 14,
+        "TimeStamp": "2026-09-04 09:19:49"
+    },
+    {
+        "id": 3,
+        "highWay": "BR-101",
+        "km": 45.3,
+        "grassHeight": 27,
+        "TimeStamp": "2026-09-04 09:19:49"
+    },
+    {
+        "id": 4,
+        "highWay": "BR-116",
+        "km": 5.2,
+        "grassHeight": 27,
+        "TimeStamp": "2026-09-04 09:19:49"
+    },
+    {
+        "id": 5,
+        "highWay": "BR-116",
+        "km": 18.7,
+        "grassHeight": 31,
+        "TimeStamp": "2026-09-04 09:19:50"
+    },
+    {
+        "id": 6,
+        "highWay": "BR-116",
+        "km": 32.1,
+        "grassHeight": 9,
+        "TimeStamp": "2026-09-04 09:19:50"
+    },
+    {
+        "id": 7,
+        "highWay": "BR-116",
+        "km": 50.0,
+        "grassHeight": 22,
+        "TimeStamp": "2026-09-04 09:19:50"
+    },
+    {
+        "id": 8,
+        "highWay": "SP-348",
+        "km": 10.0,
+        "grassHeight": 6,
+        "TimeStamp": "2026-09-04 09:19:50"
+    },
+    {
+        "id": 9,
+        "highWay": "SP-348",
+        "km": 25.4,
+        "grassHeight": 29,
+        "TimeStamp": "2026-09-04 09:19:50"
+    },
+    {
+        "id": 10,
+        "highWay": "SP-348",
+        "km": 40.8,
+        "grassHeight": 15,
+        "TimeStamp": "2026-09-04 09:19:50"
+    },
+    {
+        "id": 11,
+        "highWay": "BR-381",
+        "km": 8.3,
+        "grassHeight": 19,
+        "TimeStamp": "2026-09-04 09:19:50"
+    },
+    {
+        "id": 12,
+        "highWay": "BR-381",
+        "km": 22.6,
+        "grassHeight": 33,
+        "TimeStamp": "2026-09-04 09:19:50"
+    },
+    {
+        "id": 2,
+        "highWay": "BR-101",
+        "km": 28.0,
+        "grassHeight": 14,
+        "TimeStamp": "2026-09-04 09:25:55"
+    },
+    {
+        "id": 3,
+        "highWay": "BR-101",
+        "km": 45.3,
+        "grassHeight": 27,
+        "TimeStamp": "2026-09-04 09:25:55"
+    },
+    {
+        "id": 4,
+        "highWay": "BR-116",
+        "km": 5.2,
+        "grassHeight": 27,
+        "TimeStamp": "2026-09-04 09:25:55"
+    },
+    {
+        "id": 5,
+        "highWay": "BR-116",
+        "km": 18.7,
+        "grassHeight": 31,
+        "TimeStamp": "2026-09-04 09:25:55"
+    },
+    {
+        "id": 6,
+        "highWay": "BR-116",
+        "km": 32.1,
+        "grassHeight": 9,
+        "TimeStamp": "2026-09-04 09:25:55"
+    },
+    {
+        "id": 7,
+        "highWay": "BR-116",
+        "km": 50.0,
+        "grassHeight": 22,
+        "TimeStamp": "2026-09-04 09:25:55"
+    },
+    {
+        "id": 8,
+        "highWay": "SP-348",
+        "km": 10.0,
+        "grassHeight": 6,
+        "TimeStamp": "2026-09-04 09:25:55"
+    },
+    {
+        "id": 9,
+        "highWay": "SP-348",
+        "km": 25.4,
+        "grassHeight": 29,
+        "TimeStamp": "2026-09-04 09:25:55"
+    },
+    {
+        "id": 10,
+        "highWay": "SP-348",
+        "km": 40.8,
+        "grassHeight": 15,
+        "TimeStamp": "2026-09-04 09:25:55"
+    },
+    {
+        "id": 11,
+        "highWay": "BR-381",
+        "km": 8.3,
+        "grassHeight": 19,
+        "TimeStamp": "2026-09-04 09:25:55"
+    },
+    {
+        "id": 12,
+        "highWay": "BR-381",
+        "km": 22.6,
+        "grassHeight": 33,
+        "TimeStamp": "2026-09-04 09:25:55"
+    }
+]

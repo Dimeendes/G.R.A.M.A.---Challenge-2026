@@ -11,11 +11,11 @@ export default function Map() {
   const { sensors, isLoading } = useSensors();
  
   function getMarkerColor(grassHeight) {
-    if (grassHeight <= 15) {
+    if (grassHeight <= 10) {
       return "#22C55E"; // Verde
     }
  
-    if (grassHeight <= 25) {
+    if (grassHeight <= 30) {
       return "#F59E0B"; // Amarelo
     }
  

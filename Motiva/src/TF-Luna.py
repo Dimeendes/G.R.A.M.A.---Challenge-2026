@@ -40,6 +40,16 @@ def inicializarBanco():
 
     cursor.execute('''
         CREATE INDEX IF NOT EXISTS idx_timestamp ON medicoes (TimeStamp)''')
+    try: 
+        cursor.execute("""
+        ALTER TABLE medicoes ADD COLUMN crescimento_semanal REAL
+        """)
+
+        cursor.execute("""
+        ALTER TABLE medicoes ADD COLUMN data_prevista_critica TEXT
+        """)
+    except sqlite3.OperationalError:
+        pass
     
     conexao.commit()
     conexao.close()

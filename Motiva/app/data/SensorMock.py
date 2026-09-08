@@ -102,4 +102,8 @@ while True:
                 )
         except requests.exceptions.RequestException as erro:
             print(f"Erro ao enviar sensor {sensor['id']}: {erro}")
+<<<<<<< HEAD
     time.sleep(5)
+=======
+    time.sleep(30)
+>>>>>>> ea0358c13f88c25e5fbe7f44d745e37281cc3efe

@@ -1,7 +1,11 @@
 import sqlite3
 from pathlib import Path
 
+<<<<<<< HEAD
 DB_FILE = Path(__file__).resolve().parents[2] / "data" / "dados.db"
+=======
+DB_FILE = Path(__file__).resolve().parent.parent / "data" / "dados.db"
+>>>>>>> ea0358c13f88c25e5fbe7f44d745e37281cc3efe
 
 
 def buscar_medicoes():
@@ -16,7 +20,11 @@ def buscar_medicoes():
             highWay,
             km,
             grassHeight,
+<<<<<<< HEAD
             TimeStamp AS timestamp
+=======
+            TimeStamp
+>>>>>>> ea0358c13f88c25e5fbe7f44d745e37281cc3efe
         FROM medicoes
         ORDER BY sensor_id, TimeStamp
     """)

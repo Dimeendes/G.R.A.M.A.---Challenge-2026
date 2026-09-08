@@ -2,6 +2,7 @@
 #include <WiFi.h>
 #include <string.h>
 #include <Wire.h>
+#include <ESP32Servo.h>
  
 // Define I2C Connections (edit as required)
 #define I2C_SDA 17
@@ -16,10 +17,15 @@
 #define ledVerde 25
 #define ledAmarelo 32
 #define ledVermelho 33
+
+// Define o servo
+Servo servo;
+
+int angulos[] = {0, 10, 20, 30, 40};
  
 unsigned char buf1[] = { 0x5A, 0x05, 0x00, 0x01, 0x60 };
  
-uint8_t broadcastAddress[] = {0x00, 0x70, 0x07, 0x1b, 0xe0, 0x28};
+uint8_t broadcastAddress[] = {0x00, 0x70, 0x07, 0x17, 0x08, 0x6c};
  
 bool isPeerConnected = false;
 void addPeer();
@@ -27,14 +33,38 @@ void addPeer();
  
 typedef struct struct_message {
   int id;
-  int grassHeight;
-  char highway[6];
+  char highway[10];
   int km;
+  int grassHeight;
 } struct_message;
  
 struct_message myData;
  
 esp_now_peer_info_t peerInfo;
+
+int medirAltura(){
+  Wire.beginTransmission(I2C_ADDRESS);
+  Wire.write(buf1,5);
+  Wire.endTransmission();
+
+  Wire.requestFrom(I2C_ADDRESS, DATA_LENGTH);
+
+  uint8_t data[DATA_LENGTH] = { 0 };
+  int index = 0;
+
+  while(Wire.available() > 0 && index < DATA_LENGTH){
+    data[index++] = Wire.read();
+  }
+
+  if(index == DATA_LENGTH){
+    int distance = data[2] + data[3] * 256;
+    int alturaGrama = 70 - distance;
+
+    return alturaGrama;
+  }
+  return 0;
+}
+
 
 void acenderLED(int grassHeight) {
   if (grassHeight <= 10) {
@@ -82,8 +112,8 @@ void addPeer() {
  
 void setup() {
   Serial.begin(115200);
- 
-
+  
+  servo.attach(27);
  
   pinMode(ledVerde, OUTPUT);
 
@@ -114,51 +144,32 @@ void setup() {
  
  
 void loop() {
-  // put your main code here, to run repeatedly:
- 
-  Wire.beginTransmission(I2C_ADDRESS);
-  // Send Instructions
-  Wire.write(buf1, 5);
-  // End I2C Data Transmission
-  Wire.endTransmission();
- 
-  // Request data from TF-Luna
-  Wire.requestFrom(I2C_ADDRESS, DATA_LENGTH);
-  // Create array to hold data
-  uint8_t data[DATA_LENGTH] = { 0 };
-  // Variables for distance, signal strength and chip temperature
-  uint16_t distance = 0; 
-  uint16_t strength = 0;
-  int16_t temperature = 0;
-  // Checksum and index variables
-  int checksum = 0;
-  int index = 0;
- 
-  // Read data into array
-  while (Wire.available() > 0 && index < DATA_LENGTH) {
-    data[index++] = Wire.read();
+
+  int somaAltura = 0;
+  for(int i = 0; i < 5; i++){
+    servo.write(angulos[i]);
+
+    delay(500);
+    int altura = medirAltura();
+
+    Serial.print("Angulo: ");
+    Serial.print(angulos[i]);
+    Serial.print(" | Altura: ");
+    Serial.print(altura);
+    Serial.println(" cm");
+
+    somaAltura += altura;
+    servo.write(angulos[0]);
   }
-  // If data is complete then extract values
-  if (index == DATA_LENGTH) {
-    distance = 140  - (data[2] + data[3] * 256);     //  Distance definida para medir em uma altura de 140 cm acima do solo para testes
-    strength = data[4] + data[5] * 256;     // Signal strength
-    temperature = data[6] + data[7] * 256;  // Chip temperature
- 
-    // Print values to Serial Monitor
-    Serial.print("Distance: ");
-    Serial.print(distance);
-    Serial.println(" cm: ");
-    Serial.print("Signal Strength: ");
-    Serial.println(strength);
-    Serial.print("Chip Temperature: ");
-    Serial.print(temperature / 8.0 - 256.0);
-    Serial.println(" C");
-  }
-  // Short delay for TF-Luna
-  delay(10);
+
+  int alturaMedia = somaAltura / 5;
+
+  Serial.print("Altura média: ");
+  Serial.print(alturaMedia);
+  Serial.println(" CM");
 
   myData.id = 1; //Id/highway/km são variáveis próprias de cada sensor, não requer lógica, somente determinar diretamente
-  myData.grassHeight = distance;
+  myData.grassHeight = alturaMedia;
   strcpy(myData.highway, "BR-101");
   myData.km = 12;
  
@@ -172,7 +183,7 @@ void loop() {
     }
   }
 
-  acenderLED(distance);
+  acenderLED(alturaMedia);
 
   delay(5000);
  

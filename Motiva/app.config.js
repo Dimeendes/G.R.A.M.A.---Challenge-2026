@@ -6,7 +6,10 @@ export default {
     slug: "meu-app",
     version: "1.0.0",
     orientation: "portrait",
- 
+    extra: {
+      admUser: process.env.admUser,
+      admPassword: process.env.admPassword,
+    },
     android: {
         config: {
         googleMaps: {

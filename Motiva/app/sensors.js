@@ -14,6 +14,8 @@ const SEARCH_OPTIONS = [
 
 export default function Sensors() {
   const router = useRouter();
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedSensor, setSelectedSensor] = useState(null);
   const { logout } = useAuth();
   const { sensors } = useSensors();
   const [searchMode, setSearchMode] = useState('id');
@@ -94,29 +96,39 @@ export default function Sensors() {
             const status = getGrassHeightStatus(sensor.grassHeight);
 
             return (
-              <View key={sensor.id} style={[styles.card, { borderColor: status.color }]}>
+              <TouchableOpacity
+                key={sensor.id}
+                style={[styles.card, { borderColor: status.color }]}
+                onPress={() => {
+                  setSelectedSensor(sensor);
+                  setModalVisible(true);
+                }}
+              >
                 <View style={styles.cardHeader}>
                   <Text style={styles.cardTitle}>Sensor #{sensor.id}</Text>
                   <View style={[styles.badge, { backgroundColor: status.color }]}>
                     <Text style={styles.badgeText}>{status.label}</Text>
                   </View>
                 </View>
+                  <View style={styles.infoRow}>
+                    <Ionicons name="trail-sign-outline" size={18} color="#5E22F3" />
+                    <Text style={styles.infoText}>Rodovia: {sensor.highway}</Text>
+                  </View>
 
-                <View style={styles.infoRow}>
-                  <Ionicons name="trail-sign-outline" size={18} color="#5E22F3" />
-                  <Text style={styles.infoText}>Rodovia: {sensor.highway}</Text>
-                </View>
+                  <View style={styles.infoRow}>
+                    <Ionicons name="location-outline" size={18} color="#5E22F3" />
+                    <Text style={styles.infoText}>KM: {sensor.km.toFixed(1)}</Text>
+                  </View>
 
-                <View style={styles.infoRow}>
-                  <Ionicons name="location-outline" size={18} color="#5E22F3" />
-                  <Text style={styles.infoText}>KM: {sensor.km.toFixed(1)}</Text>
-                </View>
+                  <View style={styles.infoRow}>
+                    <Ionicons name="leaf-outline" size={18} color="#5E22F3" />
+                    <Text style={styles.infoText}>Altura da grama: {sensor.grassHeight} cm</Text>
+                  </View>
 
-                <View style={styles.infoRow}>
-                  <Ionicons name="leaf-outline" size={18} color="#5E22F3" />
-                  <Text style={styles.infoText}>Altura da grama: {sensor.grassHeight} cm</Text>
+                <View style={styles.infoButton}>
+                    <Text style={styles.infoButtonText}>Ver Detalhes</Text>
                 </View>
-              </View>
+              </TouchableOpacity>
             );
           })}
 
@@ -127,6 +139,64 @@ export default function Sensors() {
           )}
         </View>
       </ScrollView>
+      {modalVisible && selectedSensor && (
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            {(() => {
+              const selectedStatus = getGrassHeightStatus(selectedSensor.grassHeight);
+
+              return (
+                <>
+                  <View style={styles.modalHeader}>
+                    <View>
+                      <Text style={styles.modalTitle}>Sensor #{selectedSensor.id}</Text>
+                      <Text style={styles.modalSubtitle}>Detalhes do sensor</Text>
+                    </View>
+                    <View style={[styles.modalBadge, { backgroundColor: selectedStatus.color }]}>
+                      <Text style={styles.badgeText}>{selectedStatus.label}</Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.coreInfo}>
+                    <View style={styles.detailRow}>
+                      <Ionicons name="trail-sign-outline" size={20} color="#5E22F3" />
+                      <View style={styles.detailText}>
+                        <Text style={styles.detailLabel}>Rodovia</Text>
+                        <Text style={styles.detailValue}>{selectedSensor.highway || 'Não informado'}</Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.detailRow}>
+                      <Ionicons name="location-outline" size={20} color="#5E22F3" />
+                      <View style={styles.detailText}>
+                        <Text style={styles.detailLabel}>Quilômetro</Text>
+                        <Text style={styles.detailValue}>
+                          KM {Number(selectedSensor.km || 0).toFixed(1)}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.detailRow}>
+                      <Ionicons name="leaf-outline" size={20} color="#5E22F3" />
+                      <View style={styles.detailText}>
+                        <Text style={styles.detailLabel}>Altura da grama</Text>
+                        <Text style={styles.detailValue}>{selectedSensor.grassHeight} cm</Text>
+                      </View>
+                    </View>
+                  </View>
+
+                  <TouchableOpacity
+                    style={styles.closeButton}
+                    onPress={() => setModalVisible(false)}
+                  >
+                    <Text style={styles.closeButtonText}>Fechar</Text>
+                  </TouchableOpacity>
+                </>
+              );
+            })()}
+          </View>
+        </View>
+      )}
 
       <View style={styles.navigationContainer}>
         <View style={styles.navigationBar}>
@@ -200,4 +270,19 @@ const styles = StyleSheet.create({
   activeIcon:          { width: 42, height: 42, borderRadius: 21, backgroundColor: '#5d22f244', justifyContent: 'center', alignItems: 'center', marginBottom: 4 },
   iconText:            { color: '#000', fontSize: 11, marginTop: 4 },
   activeIconText:      { color: '#5E22F3', fontSize: 11, fontWeight: 'bold' },
+  infoButton:          { marginTop: 12, alignItems: 'flex-end' },
+  infoButtonText:      { color: '#5E22F3', fontWeight: 'bold' },
+  modalOverlay:        { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, zIndex: 10, elevation: 10, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: 'rgba(0, 0, 0, 0.5)' },
+  modalContent:        { width: '100%', maxWidth: 420, backgroundColor: '#fff', borderRadius: 16, padding: 20 },
+  modalHeader:         { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 },
+  modalTitle:          { fontSize: 22, fontWeight: 'bold', color: '#333' },
+  modalSubtitle:       { color: '#666', fontSize: 14, marginTop: 4 },
+  modalBadge:          { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12 },
+  detailRow:           { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#eee' },
+  detailText:          { flex: 1, minWidth: 0, flexDirection: 'column', alignItems: 'flex-start', gap: 2 },
+  detailLabel:         { color: '#777', fontSize: 12, flexShrink: 0 },
+  detailValue:         { color: '#333', fontSize: 14, fontWeight: '600', marginTop: 0, flexShrink: 1 },
+  closeButton:         { backgroundColor: '#5E22F3', borderRadius: 10, padding: 14, alignItems: 'center', marginTop: 24 },
+  closeButtonText:     { color: '#fff', fontWeight: 'bold', fontSize: 15 },
+  coreInfo:            { flexDirection: 'column'}
 });

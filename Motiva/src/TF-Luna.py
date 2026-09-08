@@ -1,11 +1,16 @@
 import serial
 from serial.tools import list_ports
-import json
 from pathlib import Path
+import sys
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 import threading
 from datetime import datetime
+import sqlite3
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from services.algoritmo import executar_algoritmo
 
 
 # ============================================================
@@ -16,8 +21,42 @@ BAUD_RATE = 115200
 API_PORT = 5000
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-DATA_FILE = BASE_DIR / "data" / "dados.json"
+DB_FILE = BASE_DIR / "data" / "dados.db"
 
+def inicializarBanco():
+    DB_FILE.parent.mkdir(parents=True, exist_ok=True)
+
+    conexao = sqlite3.connect(DB_FILE)
+    cursor = conexao.cursor()
+
+    cursor.execute('''
+     CREATE TABLE IF NOT EXISTS medicoes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            sensor_id INTEGER NOT NULL,
+            highWay TEXT NOT NULL,
+            km REAL NOT NULL,
+            grassHeight REAL NOT NULL,
+            TimeStamp TEXT NOT NULL
+            )
+            ''')
+    cursor.execute('''
+        CREATE INDEX IF NOT EXISTS idx_sensor_id ON medicoes (sensor_id)''')
+
+    cursor.execute('''
+        CREATE INDEX IF NOT EXISTS idx_timestamp ON medicoes (TimeStamp)''')
+    try: 
+        cursor.execute("""
+        ALTER TABLE medicoes ADD COLUMN crescimento_semanal REAL
+        """)
+
+        cursor.execute("""
+        ALTER TABLE medicoes ADD COLUMN data_prevista_critica TEXT
+        """)
+    except sqlite3.OperationalError:
+        pass
+    
+    conexao.commit()
+    conexao.close()
 
 # ============================================================
 # FLASK
@@ -33,30 +72,27 @@ CORS(app)
 
 @app.route("/dados", methods=["GET"])
 def obter_dados():
-
     try:
+        conexao = sqlite3.connect(DB_FILE)
+        conexao.row_factory = sqlite3.Row
+        cursor = conexao.cursor()
 
-        if not DATA_FILE.exists():
-            return jsonify([])
+        cursor.execute('''
+            SELECT sensor_id AS id, highWay, km, grassHeight, TimeStamp
+            FROM medicoes
+            where id IN(select max(id) from medicoes group by sensor_id)
+            ORDER BY sensor_id
+        ''')
+        dados = [dict(linha) for linha in cursor.fetchall()]
 
-        with open(
-            DATA_FILE,
-            "r",
-            encoding="utf-8"
-        ) as arquivo:
-
-            dados = json.load(arquivo)
-
+        conexao.close()
         return jsonify(dados)
-
+    
     except Exception as erro:
-
-        print("Erro ao ler JSON:", erro)
-
+        print("Erro ao ler banco:", erro)
         return jsonify({
             "erro": "Erro ao ler os dados"
         }), 500
-
 
 # ============================================================
 # POST - RECEBE DADOS DE UM SENSOR
@@ -64,9 +100,7 @@ def obter_dados():
 
 @app.route("/dados", methods=["POST"])
 def receber_dado_api():
-
     try:
-
         novo_dado = request.get_json()
 
         if not novo_dado:
@@ -74,110 +108,27 @@ def receber_dado_api():
                 "erro": "Nenhum dado recebido"
             }), 400
 
-        # ================================================
-        # VALIDA OS CAMPOS
-        # ================================================
-
-        campos_obrigatorios = [
-            "id",
-            "highWay",
-            "km",
-            "grassHeight"
-        ]
+        campos_obrigatorios = ["id", "highWay", "km", "grassHeight"]
 
         for campo in campos_obrigatorios:
-
             if campo not in novo_dado:
-
                 return jsonify({
-                    "erro": f"Campo '{campo}' não encontrado"
+                    "erro": f"Campo '{campo}' ausente"
                 }), 400
 
-        # ================================================
-        # ADICIONA TIMESTAMP
-        # ================================================
-
-        novo_dado["TimeStamp"] = datetime.now().strftime(
-            "%Y-%m-%d %H:%M:%S"
-        )
-
-        # ================================================
-        # GARANTE QUE A PASTA EXISTE
-        # ================================================
-
-        DATA_FILE.parent.mkdir(
-            parents=True,
-            exist_ok=True
-        )
-
-        # ================================================
-        # CARREGA HISTÓRICO
-        # ================================================
-
-        if DATA_FILE.exists():
-
-            try:
-
-                with open(
-                    DATA_FILE,
-                    "r",
-                    encoding="utf-8"
-                ) as arquivo:
-
-                    dados = json.load(arquivo)
-
-                if not isinstance(dados, list):
-                    dados = []
-
-            except json.JSONDecodeError:
-
-                dados = []
-
+        if salvar_dado(novo_dado):
+            return jsonify({
+                "mensagem": "Dado salvo com sucesso"
+            }), 201
         else:
-
-            dados = []
-
-        # ================================================
-        # ADICIONA NOVO DADO
-        # ================================================
-
-        dados.append(novo_dado)
-
-        # ================================================
-        # SALVA JSON
-        # ================================================
-
-        with open(
-            DATA_FILE,
-            "w",
-            encoding="utf-8"
-        ) as arquivo:
-
-            json.dump(
-                dados,
-                arquivo,
-                indent=4,
-                ensure_ascii=False
-            )
-
-        print("Novo dado recebido pela API:")
-        print(novo_dado)
-
-        return jsonify({
-            "status": "ok",
-            "mensagem": "Dado recebido com sucesso",
-            "dado": novo_dado
-        }), 201
-
+            return jsonify({
+                "erro": "Erro ao salvar o dado"
+            }), 500
     except Exception as erro:
-
-        print("Erro ao receber dado:", erro)
-
+        print("Erro ao receber dado", erro)
         return jsonify({
             "erro": "Erro ao processar os dados"
         }), 500
-
-
 # ============================================================
 # SERIAL
 # ============================================================
@@ -346,69 +297,38 @@ def salvar_dado(novo_dado):
 
     try:
 
-        # Adiciona timestamp
         novo_dado["TimeStamp"] = datetime.now().strftime(
-            "%Y-%m-%d %H:%M:%S"
-        )
+            "%Y-%m-%d %H:%M:%S")
 
-        DATA_FILE.parent.mkdir(
-            parents=True,
-            exist_ok=True
-        )
+        conexao = sqlite3.connect(DB_FILE)
+        cursor = conexao.cursor()
 
-        # Carrega histórico
-        if DATA_FILE.exists():
+        cursor.execute('''
+            INSERT INTO medicoes (
+                sensor_id,
+                highWay,
+                km,
+                grassHeight,
+                TimeStamp
+            ) VALUES (?, ?, ?, ?, ?)
+        ''', (
+            novo_dado["id"],
+            novo_dado["highWay"],
+            novo_dado["km"],
+            novo_dado["grassHeight"],
+            novo_dado["TimeStamp"]
+        ))
+        conexao.commit()
+        conexao.close()
 
-            try:
-
-                with open(
-                    DATA_FILE,
-                    "r",
-                    encoding="utf-8"
-                ) as arquivo:
-
-                    dados = json.load(arquivo)
-
-                if not isinstance(dados, list):
-                    dados = []
-
-            except json.JSONDecodeError:
-
-                dados = []
-
-        else:
-
-            dados = []
-
-        # Adiciona
-        dados.append(novo_dado)
-
-        # Salva
-        with open(
-            DATA_FILE,
-            "w",
-            encoding="utf-8"
-        ) as arquivo:
-
-            json.dump(
-                dados,
-                arquivo,
-                indent=4,
-                ensure_ascii=False
-            )
-
-        print("Novo dado salvo:")
-        print(novo_dado)
-        print()
+        executar_algoritmo()
 
         return True
-
     except Exception as erro:
 
         print("Erro ao salvar dado:", erro)
 
         return False
-
 
 # ============================================================
 # INICIALIZAÇÃO
@@ -420,24 +340,25 @@ if __name__ == "__main__":
     # INICIA FLASK
     # ================================================
 
-    if __name__ == "__main__":
-        print("================================")
-        print("API iniciada")
-        print(f"Porta: {API_PORT}")
-        print("GET: /dados")
-        print("POST: /dados")
-        print("================================")
+    inicializarBanco()
 
-        serial_thread = threading.Thread(
-            target=receber_dados,
-            daemon=True
-        )
+    print("================================")
+    print("API iniciada")
+    print(f"Porta: {API_PORT}")
+    print("GET: /dados")
+    print("POST: /dados")
+    print("================================")
 
-        serial_thread.start()
+    serial_thread = threading.Thread(
+        target=receber_dados,
+        daemon=True
+    )
 
-        app.run(
-            host="0.0.0.0",
-            port=API_PORT,
-            debug=False,
-            use_reloader=False
-        )
+    serial_thread.start()
+
+    app.run(
+        host="0.0.0.0",
+        port=API_PORT,
+        debug=False,
+        use_reloader=False
+    )

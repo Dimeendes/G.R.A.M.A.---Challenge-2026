@@ -99,6 +99,11 @@ export default function Home() {
             <Text style={styles.iconText}>Sensores</Text>
           </TouchableOpacity>
 
+          <TouchableOpacity style={styles.navButton} onPress={() => router.push('/OrdemServico')}>
+            <Ionicons name="document-outline" size={24} color="#000" />
+            <Text style={styles.iconText}>OS</Text>
+          </TouchableOpacity>
+
           <TouchableOpacity style={styles.navButton} onPress={() => router.push('/map')}>
             <Ionicons name="map-outline" size={24} color="#000" />
             <Text style={styles.iconText}>Mapa</Text>
@@ -171,7 +176,7 @@ const styles = StyleSheet.create({
   confirmButtonDisabled: { opacity: 0.5 },
   confirmButtonText:     { color: '#fff', fontSize: 16, fontWeight: 'bold' },
   navigationContainer:   { position: 'absolute', bottom: 15, left: 15, right: 15, zIndex: 10 },
-  navigationBar:         { height: 75, backgroundColor: '#d0d0d0', borderRadius: 25, borderWidth: 1, borderColor: '#dfdfdf', flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', elevation: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 6 },
+  navigationBar:         { height: 75, backgroundColor: '#fff', borderWidth: 0, borderColor: '#fff', flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 6 },
   navButton:             { flex: 1, alignItems: 'center', justifyContent: 'center' },
   activeIcon:            { width: 42, height: 42, borderRadius: 21, backgroundColor: '#5d22f244', justifyContent: 'center', alignItems: 'center', marginBottom: 4 },
   iconText:              { color: '#000', fontSize: 11, marginTop: 4 },

@@ -9,17 +9,11 @@ import { getHighwaysSummary } from './data/sensorsData';
 export default function Home() {
   const router = useRouter();
   const { logout } = useAuth();
-  const { sensors, simulateCut, isLoading, source } = useSensors();
-  const [isModalVisible, setIsModalVisible] = useState(false);
+  const { sensors } = useSensors();
   const [selectedSensorId, setSelectedSensorId] = useState(null);
 
   const highways = getHighwaysSummary(sensors);
   const totalAlerts = highways.reduce((acc, highway) => acc + highway.alerts, 0);
-
-  function openModal() {
-    setSelectedSensorId(null);
-    setIsModalVisible(true);
-  }
 
   function closeModal() {
     setIsModalVisible(false);
@@ -97,51 +91,6 @@ export default function Home() {
         </View>
       </ScrollView>
 
-      <Modal visible={isModalVisible} transparent animationType="fade" onRequestClose={closeModal}>
-        <Pressable style={styles.modalOverlay} onPress={closeModal}>
-          <Pressable style={styles.modalContent} onPress={(e) => e.stopPropagation()}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Simular corte</Text>
-              <TouchableOpacity onPress={closeModal}>
-                <Ionicons name="close" size={24} color="#333" />
-              </TouchableOpacity>
-            </View>
-
-            <Text style={styles.modalSubtitle}>Selecione o sensor para simular o corte da grama:</Text>
-
-            <ScrollView style={styles.sensorList} nestedScrollEnabled>
-              {sensors.map((sensor) => {
-                const isSelected = selectedSensorId === sensor.id;
-
-                return (
-                  <TouchableOpacity
-                    key={sensor.id}
-                    style={[styles.sensorOption, isSelected && styles.sensorOptionSelected]}
-                    onPress={() => setSelectedSensorId(sensor.id)}
-                  >
-                    <View style={styles.sensorOptionInfo}>
-                      <Text style={styles.sensorOptionTitle}>Sensor #{sensor.id}</Text>
-                      <Text style={styles.sensorOptionDetail}>
-                        {sensor.highway} · KM {sensor.km.toFixed(1)} · {sensor.grassHeight} cm
-                      </Text>
-                    </View>
-                    {isSelected && <Ionicons name="checkmark-circle" size={22} color="#5E22F3" />}
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-
-            <TouchableOpacity
-              style={[styles.confirmButton, !selectedSensorId && styles.confirmButtonDisabled]}
-              onPress={confirmCut}
-              disabled={!selectedSensorId}
-            >
-              <Ionicons name="cut" size={20} color="#fff" />
-              <Text style={styles.confirmButtonText}>Simular corte</Text>
-            </TouchableOpacity>
-          </Pressable>
-        </Pressable>
-      </Modal>
 
       <View style={styles.navigationContainer}>
         <View style={styles.navigationBar}>

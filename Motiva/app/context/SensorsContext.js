@@ -25,15 +25,7 @@ export function SensorsProvider({ children }) {
           const latestSensors = {};
  
           data.forEach((sensor) => {
-            const id = sensor.id;
- 
-            if (
-              !latestSensors[id] ||
-              new Date(sensor.TimeStamp) >
-                new Date(latestSensors[id].TimeStamp)
-            ) {
-              latestSensors[id] = sensor;
-            }
+            latestSensors[sensor.id] = sensor;
           });
  
           // Converte o objeto novamente para array

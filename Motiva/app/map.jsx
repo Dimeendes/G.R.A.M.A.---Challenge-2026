@@ -15,7 +15,7 @@ export default function Map() {
       return "#22C55E"; // Verde
     }
  
-    if (grassHeight <= 30) {
+    if (grassHeight < 30) {
       return "#F59E0B"; // Amarelo
     }
  

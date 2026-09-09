@@ -7,13 +7,10 @@ from flask_cors import CORS
 import threading
 from datetime import datetime
 import sqlite3
-<<<<<<< HEAD
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from services.algoritmo import executar_algoritmo
-=======
->>>>>>> ea0358c13f88c25e5fbe7f44d745e37281cc3efe
 
 
 # ============================================================
@@ -43,11 +40,7 @@ def inicializarBanco():
             )
             ''')
     cursor.execute('''
-<<<<<<< HEAD
         CREATE INDEX IF NOT EXISTS idx_sensor_id ON medicoes (sensor_id)''')
-=======
-        CREATE INDEX IF NOT EXISTS idx_sensor_id ON medicoes (sensor_id''')
->>>>>>> ea0358c13f88c25e5fbe7f44d745e37281cc3efe
 
     cursor.execute('''
         CREATE INDEX IF NOT EXISTS idx_timestamp ON medicoes (TimeStamp)''')
@@ -327,11 +320,8 @@ def salvar_dado(novo_dado):
         ))
         conexao.commit()
         conexao.close()
-<<<<<<< HEAD
 
         executar_algoritmo()
-=======
->>>>>>> ea0358c13f88c25e5fbe7f44d745e37281cc3efe
 
         return True
     except Exception as erro:

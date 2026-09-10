@@ -1,12 +1,30 @@
 import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 
-const defaultHost = Platform.OS === 'android'
-  ? '10.0.2.2'
-  : '127.0.0.1';
+function getDefaultHost() {
+  // Android Emulator
+  if (
+    Platform.OS === 'android' &&
+    Constants.executionEnvironment === 'standalone'
+  ) {
+    return '192.168.15.5';
+  }
 
-const DEFAULT_API_URL =
-  process.env.EXPO_PUBLIC_ESP32_URL ||
-  `http://${defaultHost}:5000`;
+  // Em desenvolvimento, tenta pegar o host usado pelo Expo
+  const debuggerHost =
+    Constants.expoConfig?.hostUri?.split(':')[0];
+
+  if (debuggerHost) {
+    return debuggerHost;
+  }
+
+  // Fallback
+  return '192.168.15.5';
+}
+
+const defaultHost = getDefaultHost();
+
+const DEFAULT_API_URL = `http://${defaultHost}:5000`;
 
 const DEFAULT_TIMEOUT_MS = 10000;
 

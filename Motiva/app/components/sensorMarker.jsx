@@ -20,18 +20,6 @@ export default function SensorMarker({ sensor }) {
 }
  
 const styles = StyleSheet.create({
-  marker: {
-    width: 45,
-    height: 45,
-    borderRadius: 25,
-    backgroundColor: "white",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    borderColor: "green",
-  },
- 
-  text: {
-    fontSize: 24,
-  },
+  marker: { width: 45, height: 45, borderRadius: 25, backgroundColor: "white", alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: "green" },
+  text:   { fontSize: 24 }
 });

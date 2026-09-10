@@ -1,8 +1,5 @@
 import { StyleSheet, View } from "react-native";
-import MapView, {
-  Marker,
-  PROVIDER_GOOGLE,
-} from "react-native-maps";
+import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
  
 export default function Map() {
   return (

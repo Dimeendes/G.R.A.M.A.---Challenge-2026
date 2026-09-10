@@ -9,6 +9,8 @@ export default {
     extra: {
       admUser: process.env.admUser,
       admPassword: process.env.admPassword,
+      funcionarioUser: process.env.funcionarioUser,
+      funcionarioPassword: process.env.funcionarioPassword,
     },
     android: {
         config: {

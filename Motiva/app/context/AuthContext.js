@@ -2,7 +2,7 @@ import { createContext, useState, useContext, useEffect } from "react";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 
-const { admUser, admPassword } = Constants.expoConfig.extra;
+const { admUser, admPassword, funcionarioUser, funcionarioPassword } = Constants.expoConfig.extra;
 
 const AuthContext = createContext();
 
@@ -12,6 +12,12 @@ export function AuthProvider({ children }) {
         {
             username: admUser,
             password: admPassword,
+            role: 'gerente',
+        },
+        {
+            username: funcionarioUser,
+            password: funcionarioPassword,
+            role: 'funcionario',
         }
     ]);
 

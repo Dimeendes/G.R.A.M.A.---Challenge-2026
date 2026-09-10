@@ -1,4 +1,5 @@
 import {
+  Alert,
   Image,
   Modal,
   ScrollView,
@@ -7,7 +8,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useAuth } from "./context/AuthContext";
@@ -16,17 +18,54 @@ import { getGrassHeightStatus } from "./data/sensorsData";
 
 export default function OrdemServico() {
   const router = useRouter();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
+  const isFuncionario = user?.role === "funcionario";
   const [modalOS, setModalOS] = useState(false);
   const [modalEquipe, setModalEquipe] = useState(false);
   const [modalSensor, setModalSensor] = useState(false);
   const [modalExclusao, setModalExclusao] = useState(false);
   const [ordemParaExcluir, setOrdemParaExcluir] = useState(null);
   const [ordensServico, setOrdensServico] = useState([]);
+  const [notificacao, setNotificacao] = useState("");
+  const quantidadeInicial = useRef(null);
   const [equipe, setEquipe] = useState("");
   const [sensorSelecionado, setSensorSelecionado] = useState(null);
   const [mensagemValidacao, setMensagemValidacao] = useState("");
   const { sensors } = useSensors();
+
+  useEffect(() => {
+    async function carregarOrdens() {
+      try {
+        const ordensSalvas = await AsyncStorage.getItem("ordensServico");
+        const ordens = ordensSalvas ? JSON.parse(ordensSalvas) : [];
+
+        if (
+          quantidadeInicial.current !== null &&
+          isFuncionario &&
+          ordens.length > quantidadeInicial.current
+        ) {
+          const novasOrdens = ordens.length - quantidadeInicial.current;
+          const mensagem = `${novasOrdens} nova${novasOrdens > 1 ? "s" : ""} ordem${novasOrdens > 1 ? "s" : ""} de serviço recebida${novasOrdens > 1 ? "s" : ""}.`;
+          setNotificacao(mensagem);
+          Alert.alert("Nova ordem de serviço", mensagem);
+        }
+
+        quantidadeInicial.current = ordens.length;
+        setOrdensServico(ordens);
+      } catch (error) {
+        console.error("Erro ao carregar ordens de serviço", error);
+      }
+    }
+
+    carregarOrdens();
+    const intervalo = setInterval(carregarOrdens, 2000);
+    return () => clearInterval(intervalo);
+  }, [isFuncionario]);
+
+  async function salvarOrdens(ordens) {
+    setOrdensServico(ordens);
+    await AsyncStorage.setItem("ordensServico", JSON.stringify(ordens));
+  }
 
   function obterAlturaAtual(ordem) {
     const sensorAtual = sensors.find((sensor) => sensor.id === ordem.sensorId);
@@ -58,9 +97,8 @@ export default function OrdemServico() {
   }
 
   function confirmarExclusao() {
-    setOrdensServico((ordensAtuais) =>
-      ordensAtuais.filter((ordem) => ordem.id !== ordemParaExcluir)
-    );
+    const ordensAtualizadas = ordensServico.filter((ordem) => ordem.id !== ordemParaExcluir);
+    salvarOrdens(ordensAtualizadas);
     setOrdemParaExcluir(null);
     setModalExclusao(false);
   }
@@ -117,7 +155,7 @@ export default function OrdemServico() {
       dataLimite: obterDataLimite(sensorSelecionado),
     };
 
-    setOrdensServico((ordensAtuais) => [novaOrdem, ...ordensAtuais]);
+    salvarOrdens([novaOrdem, ...ordensServico]);
     fecharModalOS();
   }
 
@@ -144,13 +182,25 @@ export default function OrdemServico() {
                   : `${ordensServico.length} ordem(ns) criada(s)`}
               </Text>
             </View>
-            <TouchableOpacity
-              style={styles.newButton}
-              onPress={() => setModalOS(true)}
-            >
-              <Text style={styles.newButtonText}>+ Nova</Text>
-            </TouchableOpacity>
+            {!isFuncionario && (
+              <TouchableOpacity
+                style={styles.newButton}
+                onPress={() => setModalOS(true)}
+              >
+                <Text style={styles.newButtonText}>+ Nova</Text>
+              </TouchableOpacity>
+            )}
           </View>
+
+          {notificacao && isFuncionario && (
+            <TouchableOpacity
+              style={styles.notification}
+              onPress={() => setNotificacao("")}
+            >
+              <Ionicons name="notifications-outline" size={20} color="#166534" />
+              <Text style={styles.notificationText}>{notificacao}</Text>
+            </TouchableOpacity>
+          )}
 
           {ordensServico.length === 0 ? (
             <View style={styles.emptyState}>
@@ -188,9 +238,11 @@ export default function OrdemServico() {
                   <Text style={styles.orderInfo}>Criada em: {ordem.dataCriacao}</Text>
                   <View style={styles.orderBottom}>
                     <Text style={styles.orderInfo}>Data limite para corte: {ordem.dataLimite}</Text>
-                    <TouchableOpacity onPress={() => deletarOrdemServico(ordem.id)}>
-                      <Ionicons name="trash-outline" size={24} color="red" />
-                    </TouchableOpacity>
+                    {!isFuncionario && (
+                      <TouchableOpacity onPress={() => deletarOrdemServico(ordem.id)}>
+                        <Ionicons name="trash-outline" size={24} color="red" />
+                      </TouchableOpacity>
+                    )}
                   </View>
                 </View>
               );
@@ -453,6 +505,18 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 24,
   },
+  notification: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "#DCFCE7",
+    borderColor: "#86EFAC",
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 14,
+  },
+  notificationText: { flex: 1, color: "#166534", fontWeight: "600" },
   title: { fontSize: 26, fontWeight: "bold", color: "#000" },
   subtitle: { fontSize: 16, color: "#666", marginTop: 6 },
   newButton: {

@@ -6,19 +6,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { CRITICAL_HEIGHT, getGrassHeightStatus } from './data/sensorsData';
 import { useSensors } from './context/SensorsContext';
 
-const SEARCH_OPTIONS = [
-  { key: 'id', label: 'ID' },
-  { key: 'rodovia', label: 'Rodovia' },
-  { key: 'grama', label: 'Grama' },
-];
-
 export default function Sensors() {
   const router = useRouter();
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedSensor, setSelectedSensor] = useState(null);
   const { logout } = useAuth();
   const { sensors } = useSensors();
-  const [searchMode, setSearchMode] = useState('id');
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredSensors = useMemo(() => {
@@ -28,18 +21,12 @@ export default function Sensors() {
       return sensors;
     }
 
-    return sensors.filter((sensor) => {
-      if (searchMode === 'id') {
-        return String(sensor.id).toLowerCase().includes(query);
-      }
-
-      if (searchMode === 'rodovia') {
-        return sensor.highway?.toLowerCase().includes(query);
-      }
-
-      return String(sensor.grassHeight).toLowerCase().includes(query);
-    });
-  }, [searchMode, searchTerm, sensors]);
+    return sensors.filter((sensor) => [
+      sensor.id,
+      sensor.highway,
+      sensor.grassHeight,
+    ].some((value) => String(value ?? '').toLowerCase().includes(query)));
+  }, [searchTerm, sensors]);
 
   return (
     <>
@@ -55,39 +42,14 @@ export default function Sensors() {
           </Text>
 
           <View style={styles.searchContainer}>
-            <View style={styles.searchModeRow}>
-              {SEARCH_OPTIONS.map((option) => {
-                const isSelected = searchMode === option.key;
-
-                return (
-                  <TouchableOpacity
-                    key={option.key}
-                    style={[styles.filterButton, isSelected && styles.filterButtonActive]}
-                    onPress={() => setSearchMode(option.key)}
-                  >
-                    <Text style={[styles.filterButtonText, isSelected && styles.filterButtonTextActive]}>
-                      {option.label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-
             <View style={styles.searchInputContainer}>
               <Ionicons name="search-outline" size={18} color="#666" />
               <TextInput
                 style={styles.searchInput}
-                placeholder={
-                  searchMode === 'id'
-                    ? 'Buscar por ID do sensor'
-                    : searchMode === 'rodovia'
-                      ? 'Buscar por rodovia'
-                      : 'Buscar por altura da grama'
-                }
+                placeholder="Digite o ID, rodovia ou altura da grama"
                 placeholderTextColor="#666"
                 value={searchTerm}
                 onChangeText={setSearchTerm}
-                keyboardType={searchMode === 'id' ? 'numeric' : 'default'}
               />
             </View>
           </View>
@@ -283,11 +245,6 @@ const styles = StyleSheet.create({
   title:               { fontSize: 24, fontWeight: 'bold', color: '#333', marginBottom: 4 },
   subtitle:            { fontSize: 14, color: '#666', marginBottom: 16 },
   searchContainer:     { backgroundColor: '#fff', borderRadius: 16, padding: 12, marginBottom: 16, borderWidth: 1, borderColor: '#e5e7eb', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 4, elevation: 2 },
-  searchModeRow:       { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
-  filterButton:        { flex: 1, backgroundColor: '#f3f4f6', borderRadius: 10, paddingVertical: 8, marginHorizontal: 4, alignItems: 'center' },
-  filterButtonActive:  { backgroundColor: '#5E22F3' },
-  filterButtonText:    { color: '#333', fontWeight: '600' },
-  filterButtonTextActive: { color: '#fff', fontWeight: '600' },
   searchInputContainer:{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#f5f5f5', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10 },
   searchInput:         { flex: 1, marginLeft: 8, color: '#333', fontSize: 15 },
   card:                { backgroundColor: '#d0d0d0', borderRadius: 16, borderWidth: 1, borderColor: '#dfdfdf', padding: 16, marginBottom: 12 },

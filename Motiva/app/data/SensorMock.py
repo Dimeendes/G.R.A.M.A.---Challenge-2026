@@ -1,5 +1,8 @@
+import random
 import requests
 import time
+
+height = random.randint(2, 5)
 
 Sensores = {
     'ID02': {
@@ -78,7 +81,7 @@ while True:
             if sensor['grassHeight'] >= 30:
                 sensor['grassHeight'] = 9
             else:
-                sensor['grassHeight'] += 1
+                sensor['grassHeight'] += height
 
             print(f"Enviando dados do sensor {sensor['id']} para o servidor...")
             print(f"Altura da grama: {sensor['grassHeight']}")

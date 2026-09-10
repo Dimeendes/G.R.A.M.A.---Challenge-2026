@@ -72,6 +72,11 @@ export default function Alertas() {
             <Text style={styles.iconText}>Sensores</Text>
           </TouchableOpacity>
 
+          <TouchableOpacity style={styles.navButton} onPress={() => router.push('/OrdemServico')}>
+            <Ionicons name="document-outline" size={24} color="#000" />
+            <Text style={styles.iconText}>OS</Text>
+          </TouchableOpacity>
+
           <TouchableOpacity style={styles.navButton} onPress={() => router.push('/map')}>
             <Ionicons name="map-outline" size={24} color="#000" />
             <Text style={styles.iconText}>Mapa</Text>
@@ -121,9 +126,9 @@ const styles = StyleSheet.create({
   message:             { fontSize: 14, color: '#555', marginBottom: 12 },
   infoRow:             { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
   infoText:            { fontSize: 15, color: '#333' },
-  navigationContainer: { position: 'absolute', bottom: 15, left: 15, right: 15 },
-  navigationBar:       { height: 75, backgroundColor: '#d0d0d0', borderRadius: 25, borderWidth: 1, borderColor: '#dfdfdf', flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', elevation: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 6 },
-  navButton:           { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  navigationContainer: { position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 10 },
+  navigationBar:       { height: 95, backgroundColor: '#fff', borderWidth: 0, borderColor: '#fff', flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 6 },
+  navButton:           { flex: 1, alignItems: 'center', justifyContent: 'center', transform: [{ translateY: -12 }] },
   activeIcon:          { width: 42, height: 42, borderRadius: 21, backgroundColor: '#5d22f244', justifyContent: 'center', alignItems: 'center', marginBottom: 4 },
   iconText:            { color: '#000', fontSize: 11, marginTop: 4 },
   activeIconText:      { color: '#5E22F3', fontSize: 11, fontWeight: 'bold' },

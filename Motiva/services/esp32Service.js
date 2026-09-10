@@ -66,6 +66,23 @@ function normalizeSensorRecord(rawSensor, fallbackId = 1) {
       rawSensor.value,
       0
     ),
+
+    weeklyGrowth: normalizeNumber(
+      rawSensor.crescimento_semanal ??
+      rawSensor.weeklyGrowth,
+      0
+    ),
+
+    weeksToCritical: normalizeNumber(
+      rawSensor.semanas_para_critico ??
+      rawSensor.weeksToCritical,
+      0
+    ),
+
+    criticalDate:
+      rawSensor.data_prevista_critica ??
+      rawSensor.criticalDate ??
+      'Não disponível',
   };
 }
 

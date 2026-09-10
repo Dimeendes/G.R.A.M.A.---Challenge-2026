@@ -147,6 +147,7 @@ def executar_algoritmo():
         atualizar_previsao(
             sensor_id=int(linha["id"]),
             crescimento_semanal=float(linha["crescimento_semana_cm"]),
+            semanas_para_critico=float(linha["semanas_para_critico"]),
             data_prevista=linha["data_prevista_critica"]
         )
 

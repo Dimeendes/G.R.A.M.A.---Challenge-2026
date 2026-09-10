@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, TextInput 
 import { useRouter } from 'expo-router';
 import { useAuth } from './context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
-import { getGrassHeightStatus } from './data/sensorsData';
+import { CRITICAL_HEIGHT, getGrassHeightStatus } from './data/sensorsData';
 import { useSensors } from './context/SensorsContext';
 
 const SEARCH_OPTIONS = [
@@ -144,6 +144,12 @@ export default function Sensors() {
           <View style={styles.modalContent}>
             {(() => {
               const selectedStatus = getGrassHeightStatus(selectedSensor.grassHeight);
+              const isCritical = selectedSensor.criticalDate === 'Já está crítico';
+              const timeRemaining = isCritical
+                ? 'Já está crítico'
+                : selectedSensor.weeksToCritical > 0
+                  ? `${selectedSensor.weeksToCritical.toFixed(1)} semanas`
+                  : 'Não disponível';
 
               return (
                 <>
@@ -180,10 +186,34 @@ export default function Sensors() {
                       <Ionicons name="leaf-outline" size={20} color="#5E22F3" />
                       <View style={styles.detailText}>
                         <Text style={styles.detailLabel}>Altura da grama</Text>
-                        <Text style={styles.detailValue}>{selectedSensor.grassHeight} cm</Text>
+                        <Text style={styles.detailValue}>
+                          {selectedSensor.grassHeight} cm
+                        </Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.detailRow}>
+                      <Ionicons name="time-outline" size={20} color="#5E22F3" />
+                      <View style={styles.detailText}>
+                        <Text style={styles.detailLabel}>Tempo até ficar crítico</Text>
+                        <Text style={styles.detailValue}>{timeRemaining}</Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.detailRow}>
+                      <Ionicons name="calendar-outline" size={20} color="#5E22F3" />
+                      <View style={styles.detailText}>
+                        <Text style={styles.detailLabel}>Data prevista para ficar crítica</Text>
+                        <Text style={styles.detailValue}>
+                          {selectedSensor.criticalDate || 'Não disponível'}
+                        </Text>
                       </View>
                     </View>
                   </View>
+
+                  <Text style={styles.forecastNote}>
+                    Previsão calculada pelo algoritmo de crescimento da grama.
+                  </Text>
 
                   <TouchableOpacity
                     style={styles.closeButton}
@@ -206,6 +236,11 @@ export default function Sensors() {
               <Ionicons name="radio" size={24} color="#5E22F3" />
             </View>
             <Text style={styles.activeIconText}>Sensores</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.navButton} onPress={() => router.push('/OrdemServico')}>
+            <Ionicons name="document-outline" size={24} color="#000" />
+            <Text style={styles.iconText}>OS</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.navButton} onPress={() => router.push('/map')}>
@@ -264,9 +299,9 @@ const styles = StyleSheet.create({
   infoText:            { fontSize: 15, color: '#333' },
   emptyState:          { backgroundColor: '#fff', borderRadius: 14, padding: 18, alignItems: 'center', borderWidth: 1, borderColor: '#e5e7eb' },
   emptyStateText:      { color: '#666', fontSize: 14, textAlign: 'center' },
-  navigationContainer: { position: 'absolute', bottom: 15, left: 15, right: 15 },
-  navigationBar:       { height: 75, backgroundColor: '#d0d0d0', borderRadius: 25, borderWidth: 1, borderColor: '#dfdfdf', flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', elevation: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 6 },
-  navButton:           { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  navigationContainer: { position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 10 },
+  navigationBar:       { height: 95, backgroundColor: '#fff', borderWidth: 0, borderColor: '#fff', flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 6 },
+  navButton:           { flex: 1, alignItems: 'center', justifyContent: 'center', transform: [{ translateY: -12 }] },
   activeIcon:          { width: 42, height: 42, borderRadius: 21, backgroundColor: '#5d22f244', justifyContent: 'center', alignItems: 'center', marginBottom: 4 },
   iconText:            { color: '#000', fontSize: 11, marginTop: 4 },
   activeIconText:      { color: '#5E22F3', fontSize: 11, fontWeight: 'bold' },
@@ -284,5 +319,6 @@ const styles = StyleSheet.create({
   detailValue:         { color: '#333', fontSize: 14, fontWeight: '600', marginTop: 0, flexShrink: 1 },
   closeButton:         { backgroundColor: '#5E22F3', borderRadius: 10, padding: 14, alignItems: 'center', marginTop: 24 },
   closeButtonText:     { color: '#fff', fontWeight: 'bold', fontSize: 15 },
+  forecastNote:         { color: '#777', fontSize: 12, lineHeight: 17, marginTop: 14 },
   coreInfo:            { flexDirection: 'column'}
 });

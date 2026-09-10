@@ -1,58 +1,120 @@
 import {
-  Alert,
   Image,
   Modal,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 import { useState } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { useAuth } from "./context/AuthContext";
+import { useSensors } from "./context/SensorsContext";
+import { getGrassHeightStatus } from "./data/sensorsData";
 
 export default function OrdemServico() {
+  const router = useRouter();
+  const { logout } = useAuth();
   const [modalOS, setModalOS] = useState(false);
   const [modalEquipe, setModalEquipe] = useState(false);
-  const [modalRodovia, setModalRodovia] = useState(false);
+  const [modalSensor, setModalSensor] = useState(false);
+  const [modalExclusao, setModalExclusao] = useState(false);
+  const [ordemParaExcluir, setOrdemParaExcluir] = useState(null);
   const [ordensServico, setOrdensServico] = useState([]);
   const [equipe, setEquipe] = useState("");
-  const [rodovia, setRodovia] = useState("");
-  const [estadoGrama, setEstadoGrama] = useState("");
-  const [kmInicial, setKmInicial] = useState("");
-  const [kmFinal, setKmFinal] = useState("");
-  const [data, setData] = useState("");
+  const [sensorSelecionado, setSensorSelecionado] = useState(null);
+  const [mensagemValidacao, setMensagemValidacao] = useState("");
+  const { sensors } = useSensors();
+
+  function obterAlturaAtual(ordem) {
+    const sensorAtual = sensors.find((sensor) => sensor.id === ordem.sensorId);
+    return sensorAtual?.grassHeight ?? ordem.alturaGrama;
+  }
+
+  function converterData(data) {
+    if (!data || data === "Não disponível") {
+      return Number.POSITIVE_INFINITY;
+    }
+
+    const [dia, mes, ano] = data.split("/").map(Number);
+    return new Date(ano, mes - 1, dia).getTime();
+  }
+
+  const ordensOrdenadas = [...ordensServico].sort((ordemA, ordemB) => {
+    return converterData(ordemA.dataLimite) - converterData(ordemB.dataLimite);
+  });
 
   function limparFormulario() {
     setEquipe("");
-    setRodovia("");
-    setEstadoGrama("");
-    setKmInicial("");
-    setKmFinal("");
-    setData("");
+    setSensorSelecionado(null);
+    setMensagemValidacao("");
+  }
+
+  function deletarOrdemServico(id) {
+    setOrdemParaExcluir(id);
+    setModalExclusao(true);
+  }
+
+  function confirmarExclusao() {
+    setOrdensServico((ordensAtuais) =>
+      ordensAtuais.filter((ordem) => ordem.id !== ordemParaExcluir)
+    );
+    setOrdemParaExcluir(null);
+    setModalExclusao(false);
   }
 
   function fecharModalOS() {
     setModalOS(false);
     setModalEquipe(false);
-    setModalRodovia(false);
+    setModalSensor(false);
     limparFormulario();
   }
 
+  function formatarData(data) {
+    return data.toLocaleDateString("pt-BR");
+  }
+
+  function adicionarUmMes(data) {
+    const dataLimite = new Date(data);
+    dataLimite.setMonth(dataLimite.getMonth() + 1);
+    return dataLimite;
+  }
+
+  function obterDataLimite(sensor) {
+    const dataCriacao = new Date();
+    const sensorCritico = Number(sensor.grassHeight) >= 30 ||
+      sensor.criticalDate === "Já está crítico";
+
+    if (sensorCritico) {
+      return formatarData(adicionarUmMes(dataCriacao));
+    }
+
+    return sensor.criticalDate || "Não disponível";
+  }
+
   function enviarOrdemServico() {
-    if (!equipe || !rodovia || !kmInicial || !kmFinal || !data || !estadoGrama) {
-      Alert.alert("Campos obrigatórios", "Preencha todos os campos da ordem de serviço.");
+    if (!equipe || !sensorSelecionado) {
+      if (!equipe && !sensorSelecionado) {
+        setMensagemValidacao("Escolha uma equipe e um sensor para continuar.");
+      } else if (!equipe) {
+        setMensagemValidacao("Escolha uma equipe para continuar.");
+      } else {
+        setMensagemValidacao("Escolha um sensor para continuar.");
+      }
       return;
     }
 
     const novaOrdem = {
       id: Date.now(),
       equipe,
-      kmInicial,
-      kmFinal,
-      rodovia,
-      data,
-      estadoGrama,
+      sensorId: sensorSelecionado.id,
+      rodovia: sensorSelecionado.highway,
+      km: sensorSelecionado.km,
+      alturaGrama: sensorSelecionado.grassHeight,
+      dataCriacao: formatarData(new Date()),
+      dataLimite: obterDataLimite(sensorSelecionado),
     };
 
     setOrdensServico((ordensAtuais) => [novaOrdem, ...ordensAtuais]);
@@ -98,21 +160,41 @@ export default function OrdemServico() {
               </Text>
             </View>
           ) : (
-            ordensServico.map((ordem, index) => (
-              <View style={styles.orderCard} key={ordem.id}>
-                <View style={styles.orderHeader}>
-                  <Text style={styles.orderTitle}>Ordem #{ordensServico.length - index}</Text>
-                  <Text style={styles.orderStatus}>Criada</Text>
+            ordensOrdenadas.map((ordem, index) => {
+              const alturaAtual = obterAlturaAtual(ordem);
+              const status = getGrassHeightStatus(alturaAtual);
+              const statusLabel = status.label === "Normal"
+                ? "Altura ideal"
+                : status.label === "Atenção"
+                  ? "Alerta"
+                  : "Crítico";
+
+              return (
+                <View style={styles.orderCard} key={ordem.id}>
+                  <View style={styles.orderHeader}>
+                    <Text style={styles.orderTitle}>{ordem.equipe}</Text>
+                    <Text style={styles.orderStatus}>Criada</Text>
+                  </View>
+                  <Text style={styles.orderInfo}>Sensor: #{ordem.sensorId}</Text>
+                  <Text style={styles.orderInfo}>Rodovia: {ordem.rodovia}</Text>
+                  <Text style={styles.orderInfo}>KM: {Number(ordem.km).toFixed(1)}</Text>
+                  <Text style={styles.orderInfo}>Altura atual da grama: {alturaAtual} cm</Text>
+                  <View style={styles.orderSensorStatusRow}>
+                    <Text style={styles.orderInfo}>Nível do sensor:</Text>
+                    <View style={[styles.orderSensorStatus, { backgroundColor: status.color }]}>
+                      <Text style={styles.orderSensorStatusText}>{statusLabel}</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.orderInfo}>Criada em: {ordem.dataCriacao}</Text>
+                  <View style={styles.orderBottom}>
+                    <Text style={styles.orderInfo}>Data limite para corte: {ordem.dataLimite}</Text>
+                    <TouchableOpacity onPress={() => deletarOrdemServico(ordem.id)}>
+                      <Ionicons name="trash-outline" size={24} color="red" />
+                    </TouchableOpacity>
+                  </View>
                 </View>
-                <Text style={styles.orderInfo}>Equipe: {ordem.equipe}</Text>
-                <Text style={styles.orderInfo}>Rodovia: {ordem.rodovia}</Text>
-                <Text style={styles.orderInfo}>
-                  Trecho: KM {ordem.kmInicial} até KM {ordem.kmFinal}
-                </Text>
-                <Text style={styles.orderInfo}>Data: {ordem.data}</Text>
-                <Text style={styles.orderInfo}>Estado da grama: {ordem.estadoGrama}</Text>
-              </View>
-            ))
+              );
+            })
           )}
         </View>
       </ScrollView>
@@ -136,72 +218,47 @@ export default function OrdemServico() {
               <Text style={styles.label}>Equipe</Text>
               <TouchableOpacity
                 style={styles.select}
-                onPress={() => setModalEquipe(true)}
+                onPress={() => {
+                  setMensagemValidacao("");
+                  setModalEquipe(true);
+                }}
               >
                 <Text style={styles.selectText}>
                   {equipe || "Selecione uma equipe"}
                 </Text>
               </TouchableOpacity>
 
-              <Text style={styles.label}>Rodovia</Text>
+              <Text style={styles.label}>Sensor</Text>
               <TouchableOpacity
                 style={styles.select}
-                onPress={() => setModalRodovia(true)}
+                onPress={() => {
+                  setMensagemValidacao("");
+                  setModalSensor(true);
+                }}
               >
                 <Text style={styles.selectText}>
-                  {rodovia || "Selecione uma rodovia"}
+                  {sensorSelecionado
+                    ? `Sensor #${sensorSelecionado.id} - ${sensorSelecionado.highway}`
+                    : "Selecione um sensor"}
                 </Text>
               </TouchableOpacity>
 
-              <Text style={styles.label}>Quilometragem</Text>
-              <View style={styles.kmContainer}>
-                <TextInput
-                  style={styles.kmInput}
-                  placeholder="KM inicial"
-                  keyboardType="numeric"
-                  value={kmInicial}
-                  onChangeText={setKmInicial}
-                />
-                <Text style={styles.kmText}>até</Text>
-                <TextInput
-                  style={styles.kmInput}
-                  placeholder="KM final"
-                  keyboardType="numeric"
-                  value={kmFinal}
-                  onChangeText={setKmFinal}
-                />
-              </View>
+              {sensorSelecionado && (
+                <View style={styles.sensorPreview}>
+                  <Text style={styles.previewText}>Rodovia: {sensorSelecionado.highway}</Text>
+                  <Text style={styles.previewText}>KM: {Number(sensorSelecionado.km).toFixed(1)}</Text>
+                  <Text style={styles.previewText}>
+                    Data limite: {obterDataLimite(sensorSelecionado)}
+                  </Text>
+                </View>
+              )}
 
-              <Text style={styles.label}>Data</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="DD/MM/AAAA"
-                value={data}
-                onChangeText={setData}
-              />
-
-              <Text style={styles.label}>Estado da grama</Text>
-              <View style={styles.grassContainer}>
-                {["Normal", "Atenção", "Crítico"].map((estado) => (
-                  <TouchableOpacity
-                    key={estado}
-                    style={[
-                      styles.grassButton,
-                      estadoGrama === estado && styles.grassButtonSelected,
-                    ]}
-                    onPress={() => setEstadoGrama(estado)}
-                  >
-                    <Text
-                      style={[
-                        styles.grassButtonText,
-                        estadoGrama === estado && styles.grassButtonTextSelected,
-                      ]}
-                    >
-                      {estado}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
+              {mensagemValidacao && (
+                <View style={styles.validationMessage}>
+                  <Ionicons name="alert-circle-outline" size={18} color="#B91C1C" />
+                  <Text style={styles.validationText}>{mensagemValidacao}</Text>
+                </View>
+              )}
 
               <TouchableOpacity
                 style={styles.submitButton}
@@ -246,35 +303,134 @@ export default function OrdemServico() {
       </Modal>
 
       <Modal
-        visible={modalRodovia}
+        visible={modalSensor}
         transparent
         animationType="fade"
-        onRequestClose={() => setModalRodovia(false)}
+        onRequestClose={() => setModalSensor(false)}
       >
         <View style={styles.modalContainer}>
           <View style={styles.teamModalContent}>
-            <Text style={styles.modalTitle}>Escolha a rodovia</Text>
-            {["BR-101", "BR-116", "BR-381", "SP-348"].map((nomeRodovia) => (
-              <TouchableOpacity
-                key={nomeRodovia}
-                style={styles.teamOption}
-                onPress={() => {
-                  setRodovia(nomeRodovia);
-                  setModalRodovia(false);
-                }}
-              >
-                <Text style={styles.teamOptionText}>{nomeRodovia}</Text>
-              </TouchableOpacity>
-            ))}
+            <Text style={styles.modalTitle}>Escolha o sensor</Text>
+            <ScrollView
+              style={styles.sensorList}
+              showsVerticalScrollIndicator
+              nestedScrollEnabled
+            >
+              {sensors.map((sensor) => {
+                const status = getGrassHeightStatus(sensor.grassHeight);
+                const statusLabel = status.label === "Normal"
+                  ? "Normal"
+                  : status.label === "Atenção"
+                    ? "Alerta"
+                    : "Crítico";
+
+                return (
+                  <TouchableOpacity
+                    key={sensor.id}
+                    style={styles.sensorOption}
+                    onPress={() => {
+                      setSensorSelecionado(sensor);
+                      setModalSensor(false);
+                    }}
+                  >
+                    <View style={styles.sensorOptionHeader}>
+                      <Text style={styles.sensorOptionTitle}>Sensor #{sensor.id}</Text>
+                      <View style={[styles.sensorStatus, { backgroundColor: status.color }]}>
+                        <Text style={styles.sensorStatusText}>{statusLabel}</Text>
+                      </View>
+                    </View>
+                    <Text style={styles.sensorOptionInfo}>
+                      {sensor.highway} - KM {Number(sensor.km).toFixed(1)}
+                    </Text>
+                    <Text style={styles.sensorGrassHeight}>
+                      Altura da grama: {sensor.grassHeight} cm
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
             <TouchableOpacity
               style={styles.cancelButton}
-              onPress={() => setModalRodovia(false)}
+              onPress={() => setModalSensor(false)}
             >
               <Text style={styles.cancelButtonText}>Cancelar</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
+
+      <Modal
+        visible={modalExclusao}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setModalExclusao(false)}
+      >
+        <View style={styles.deleteModalOverlay}>
+          <View style={styles.deleteModalContent}>
+            <Ionicons name="trash-outline" size={32} color="#DC2626" />
+            <Text style={styles.deleteModalTitle}>Excluir ordem de serviço?</Text>
+            <Text style={styles.deleteModalText}>
+              Essa ação não poderá ser desfeita.
+            </Text>
+            <View style={styles.deleteModalActions}>
+              <TouchableOpacity
+                style={styles.deleteCancelButton}
+                onPress={() => setModalExclusao(false)}
+              >
+                <Text style={styles.deleteCancelText}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.deleteConfirmButton}
+                onPress={confirmarExclusao}
+              >
+                <Text style={styles.deleteConfirmText}>Excluir</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <View style={styles.navigationContainer}>
+        <View style={styles.navigationBar}>
+          <TouchableOpacity style={styles.navButton} onPress={() => router.push('/sensors')}>
+            <Ionicons name="radio-outline" size={24} color="#000" />
+            <Text style={styles.iconText}>Sensores</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.navButton}>
+            <View style={styles.activeIcon}>
+              <Ionicons name="document" size={24} color="#5E22F3" />
+            </View>
+            <Text style={styles.activeIconText}>OS</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.navButton} onPress={() => router.push('/map')}>
+            <Ionicons name="map-outline" size={24} color="#000" />
+            <Text style={styles.iconText}>Mapa</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.navButton} onPress={() => router.push('/home')}>
+            <Ionicons name="home-outline" size={24} color="#000" />
+            <Text style={styles.iconText}>Home</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.navButton} onPress={() => router.push('/alertas')}>
+            <Ionicons name="notifications-outline" size={24} color="#000" />
+            <Text style={styles.iconText}>Alertas</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.navButton}
+            onPress={() => {
+              logout();
+              router.push('/');
+            }}
+          >
+            <Ionicons name="log-out-outline" size={24} color="#000" />
+            <Text style={styles.iconText}>Sair</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
     </View>
   );
 }
@@ -282,7 +438,7 @@ export default function OrdemServico() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f5f5f5" },
   scroll: { flex: 1 },
-  scrollContent: { paddingBottom: 40 },
+  scrollContent: { paddingBottom: 110 },
   header: {
     backgroundColor: "#5E22F3",
     height: 100,
@@ -306,6 +462,24 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   newButtonText: { color: "#fff", fontSize: 15, fontWeight: "bold" },
+  sortContainer: { marginBottom: 20 },
+  sortLabel: { color: "#555", fontSize: 14, fontWeight: "600", marginBottom: 8 },
+  sortOptions: { flexDirection: "row", gap: 8 },
+  sortButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    borderWidth: 1,
+    borderColor: "#5E22F3",
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+  },
+  sortButtonActive: { backgroundColor: "#5E22F3" },
+  sortButtonText: { color: "#5E22F3", fontSize: 13, fontWeight: "600" },
+  sortButtonTextActive: { color: "#fff" },
   emptyState: {
     backgroundColor: "#fff",
     borderRadius: 8,
@@ -327,9 +501,21 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 12,
   },
+  orderBottom: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
   orderTitle: { fontSize: 17, fontWeight: "bold", color: "#222" },
   orderStatus: { color: "#15803D", fontWeight: "600" },
   orderInfo: { color: "#555", marginTop: 5, fontSize: 15 },
+  orderSensorStatusRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  orderSensorStatus: { borderRadius: 12, paddingHorizontal: 9, paddingVertical: 4 },
+  orderSensorStatusText: { color: "#fff", fontSize: 12, fontWeight: "bold" },
   modalContainer: {
     flex: 1,
     justifyContent: "flex-end",
@@ -360,6 +546,25 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   selectText: { fontSize: 16, color: "#777" },
+  sensorPreview: {
+    backgroundColor: "#f5f5f5",
+    borderRadius: 8,
+    padding: 14,
+    marginBottom: 20,
+  },
+  previewText: { color: "#555", fontSize: 14, marginBottom: 5 },
+  validationMessage: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "#FEF2F2",
+    borderWidth: 1,
+    borderColor: "#FECACA",
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+  },
+  validationText: { flex: 1, color: "#B91C1C", fontSize: 14, fontWeight: "600" },
   kmContainer: { flexDirection: "row", alignItems: "center", marginBottom: 20 },
   kmInput: {
     flex: 1,
@@ -415,8 +620,115 @@ const styles = StyleSheet.create({
     marginBottom: "auto",
     marginTop: "auto",
   },
+  sensorList: { maxHeight: 420, marginTop: 16 },
+  sensorOption: {
+    backgroundColor: "#f8f8f8",
+    borderWidth: 1,
+    borderColor: "#e5e5e5",
+    borderRadius: 10,
+    padding: 14,
+    marginBottom: 10,
+  },
+  sensorOptionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+  },
+  sensorOptionTitle: { color: "#222", fontSize: 16, fontWeight: "bold" },
+  sensorStatus: { borderRadius: 12, paddingHorizontal: 9, paddingVertical: 4 },
+  sensorStatusText: { color: "#fff", fontSize: 12, fontWeight: "bold" },
+  sensorOptionInfo: { color: "#666", fontSize: 14, marginTop: 8 },
+  sensorGrassHeight: { color: "#222", fontSize: 15, fontWeight: "600", marginTop: 8 },
   teamOption: { padding: 15, borderBottomWidth: 1, borderBottomColor: "#eee" },
   teamOptionText: { fontSize: 16 },
   cancelButton: { marginTop: 15, padding: 12, alignItems: "center" },
   cancelButtonText: { color: "#5E22F3", fontSize: 16, fontWeight: "bold" },
+  navigationContainer: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+  },
+  navigationBar: {
+    height: 95,
+    backgroundColor: "#fff",
+    borderWidth: 0,
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+  },
+  navButton: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    transform: [{ translateY: -12 }],
+  },
+  activeIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: "#5d22f244",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  iconText: { color: "#000", fontSize: 11, marginTop: 4 },
+  activeIconText: { color: "#5E22F3", fontSize: 11, fontWeight: "bold" },
+  deleteModalOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.55)",
+    padding: 24,
+  },
+  deleteModalContent: {
+    width: "100%",
+    maxWidth: 360,
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 24,
+    alignItems: "center",
+  },
+  deleteModalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#222",
+    textAlign: "center",
+    marginTop: 12,
+  },
+  deleteModalText: {
+    color: "#666",
+    fontSize: 15,
+    textAlign: "center",
+    marginTop: 8,
+  },
+  deleteModalActions: {
+    flexDirection: "row",
+    width: "100%",
+    gap: 10,
+    marginTop: 24,
+  },
+  deleteCancelButton: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 8,
+    padding: 13,
+    alignItems: "center",
+  },
+  deleteCancelText: { color: "#555", fontWeight: "600" },
+  deleteConfirmButton: {
+    flex: 1,
+    backgroundColor: "#DC2626",
+    borderRadius: 8,
+    padding: 13,
+    alignItems: "center",
+  },
+  deleteConfirmText: { color: "#fff", fontWeight: "bold" },
 });

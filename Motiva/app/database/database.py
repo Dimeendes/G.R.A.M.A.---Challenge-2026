@@ -27,13 +27,19 @@ def buscar_medicoes():
 
     return dados
 
-def atualizar_previsao(sensor_id, crescimento_semanal, data_prevista):
+def atualizar_previsao(
+    sensor_id,
+    crescimento_semanal,
+    semanas_para_critico,
+    data_prevista,
+):
     conexao = sqlite3.connect(DB_FILE)
     cursor = conexao.cursor()
 
     cursor.execute("""
         UPDATE medicoes
         SET crescimento_semanal = ?,
+            semanas_para_critico = ?,
             data_prevista_critica = ?
         WHERE id = (
             SELECT MAX(id)
@@ -42,6 +48,7 @@ def atualizar_previsao(sensor_id, crescimento_semanal, data_prevista):
         )
     """, (
         crescimento_semanal,
+        semanas_para_critico,
         data_prevista,
         sensor_id
     ))

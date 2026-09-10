@@ -1,13 +1,18 @@
-import { StyleSheet, View, Text } from "react-native";
+import { StyleSheet, View, Text, TouchableOpacity } from "react-native";
 import MapView, {
   Marker,
   PROVIDER_GOOGLE,
 } from "react-native-maps";
+import { useRouter } from "expo-router";
+import { useAuth } from "./context/AuthContext";
+import { Ionicons } from "@expo/vector-icons";
  
 import { useSensors } from "./context/SensorsContext";
 import markers from "./data/marker";
  
 export default function Map() {
+  const router = useRouter();
+  const { logout } = useAuth();
   const { sensors, isLoading } = useSensors();
  
   function getMarkerColor(grassHeight) {
@@ -81,6 +86,48 @@ export default function Map() {
 </Text>
 </View>
       )}
+
+      <View style={styles.navigationContainer}>
+        <View style={styles.navigationBar}>
+          <TouchableOpacity style={styles.navButton} onPress={() => router.push('/sensors')}>
+            <Ionicons name="radio-outline" size={24} color="#000" />
+            <Text style={styles.iconText}>Sensores</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.navButton} onPress={() => router.push('/OrdemServico')}>
+            <Ionicons name="document-outline" size={24} color="#000" />
+            <Text style={styles.iconText}>OS</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.navButton}>
+            <View style={styles.activeIcon}>
+              <Ionicons name="map" size={24} color="#5E22F3" />
+            </View>
+            <Text style={styles.activeIconText}>Mapa</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.navButton} onPress={() => router.push('/home')}>
+            <Ionicons name="home-outline" size={24} color="#000" />
+            <Text style={styles.iconText}>Home</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.navButton} onPress={() => router.push('/alertas')}>
+            <Ionicons name="notifications-outline" size={24} color="#000" />
+            <Text style={styles.iconText}>Alertas</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.navButton}
+            onPress={() => {
+              logout();
+              router.push('/');
+            }}
+          >
+            <Ionicons name="log-out-outline" size={24} color="#000" />
+            <Text style={styles.iconText}>Sair</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
 </View>
   );
 }
@@ -128,4 +175,45 @@ const styles = StyleSheet.create({
     color: "#333",
     fontWeight: "600",
   },
+
+  navigationContainer: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+  },
+
+  navigationBar: {
+    height: 95,
+    backgroundColor: "#fff",
+    borderWidth: 0,
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+  },
+
+  navButton: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    transform: [{ translateY: -12 }],
+  },
+
+  activeIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: "#5d22f244",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+
+  iconText: { color: "#000", fontSize: 11, marginTop: 4 },
+  activeIconText: { color: "#5E22F3", fontSize: 11, fontWeight: "bold" },
 });

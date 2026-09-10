@@ -44,16 +44,17 @@ def inicializarBanco():
 
     cursor.execute('''
         CREATE INDEX IF NOT EXISTS idx_timestamp ON medicoes (TimeStamp)''')
-    try: 
-        cursor.execute("""
-        ALTER TABLE medicoes ADD COLUMN crescimento_semanal REAL
-        """)
-
-        cursor.execute("""
-        ALTER TABLE medicoes ADD COLUMN data_prevista_critica TEXT
-        """)
-    except sqlite3.OperationalError:
-        pass
+    for column_name, column_type in [
+        ("crescimento_semanal", "REAL"),
+        ("semanas_para_critico", "REAL"),
+        ("data_prevista_critica", "TEXT"),
+    ]:
+        try:
+            cursor.execute(
+                f"ALTER TABLE medicoes ADD COLUMN {column_name} {column_type}"
+            )
+        except sqlite3.OperationalError:
+            pass
     
     conexao.commit()
     conexao.close()
@@ -78,7 +79,15 @@ def obter_dados():
         cursor = conexao.cursor()
 
         cursor.execute('''
-            SELECT sensor_id AS id, highWay, km, grassHeight, TimeStamp
+            SELECT
+                sensor_id AS id,
+                highWay,
+                km,
+                grassHeight,
+                crescimento_semanal,
+                semanas_para_critico,
+                data_prevista_critica,
+                TimeStamp
             FROM medicoes
             where id IN(select max(id) from medicoes group by sensor_id)
             ORDER BY sensor_id

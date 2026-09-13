@@ -9,11 +9,17 @@ export default {
     extra: {
       admUser: process.env.admUser,
       admPassword: process.env.admPassword,
+      funcionarioUser: process.env.funcionarioUser,
+      funcionarioPassword: process.env.funcionarioPassword,
+      IPESP32: process.env.EXPO_PUBLIC_ESP32_URL,
     },
     android: {
         config: {
         googleMaps: {
           apiKey: process.env.GOOGLE_MAPS_API_KEY,
+        },
+        googleRoutes: {
+          apiKey: process.env.GOOGLE_ROUTES_API_KEY,
         }
       }
     }

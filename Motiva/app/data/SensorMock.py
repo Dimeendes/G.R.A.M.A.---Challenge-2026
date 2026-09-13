@@ -75,34 +75,34 @@ Sensores = {
 
 url = "http://127.0.0.1:5000/dados"
 
-while True:
-    for sensor in Sensores.values():
 
-            if sensor['grassHeight'] >= 30:
-                sensor['grassHeight'] = 9
-            else:
-                sensor['grassHeight'] += height
+for sensor in Sensores.values():
 
-            print(f"Enviando dados do sensor {sensor['id']} para o servidor...")
-            print(f"Altura da grama: {sensor['grassHeight']}")
+                if sensor['grassHeight'] >= 30:
+                    sensor['grassHeight'] = 9
+                else:
+                    sensor['grassHeight'] += height
 
-            try:
-                response = requests.post(
-                    url,
-                    json=sensor,
-                    timeout=10
-                )
-                response.raise_for_status()
+                print(f"Enviando dados do sensor {sensor['id']} para o servidor...")
+                print(f"Altura da grama: {sensor['grassHeight']}")
 
                 try:
-                    print(response.json())
-                except requests.exceptions.JSONDecodeError:
-                    print(
-                        "Resposta da API não é JSON: "
-                        f"HTTP {response.status_code}, "
-                        f"Content-Type {response.headers.get('Content-Type')}, "
-                        f"corpo: {response.text!r}"
+                    response = requests.post(
+                        url,
+                        json=sensor,
+                        timeout=10
                     )
-            except requests.exceptions.RequestException as erro:
-                print(f"Erro ao enviar sensor {sensor['id']}: {erro}")
-    time.sleep(5)
+                    response.raise_for_status()
+
+                    try:
+                        print(response.json())
+                    except requests.exceptions.JSONDecodeError:
+                        print(
+                            "Resposta da API não é JSON: "
+                            f"HTTP {response.status_code}, "
+                            f"Content-Type {response.headers.get('Content-Type')}, "
+                            f"corpo: {response.text!r}"
+                        )
+                except requests.exceptions.RequestException as erro:
+                    print(f"Erro ao enviar sensor {sensor['id']}: {erro}")
+time.sleep(5)

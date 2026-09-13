@@ -1,13 +1,15 @@
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 
+const { IPESP32 } = Constants.expoConfig.extra;
+
 function getDefaultHost() {
   // Android Emulator
   if (
     Platform.OS === 'android' &&
     Constants.executionEnvironment === 'standalone'
   ) {
-    return '192.168.15.5';
+    return IPESP32;
   }
 
   // Em desenvolvimento, tenta pegar o host usado pelo Expo
@@ -19,7 +21,7 @@ function getDefaultHost() {
   }
 
   // Fallback
-  return '192.168.15.5';
+  return IPESP32;
 }
 
 const defaultHost = getDefaultHost();

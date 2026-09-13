@@ -7,11 +7,123 @@ from flask_cors import CORS
 import threading
 from datetime import datetime
 import sqlite3
+import requests
+import os
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from services.algoritmo import executar_algoritmo
 
+app = Flask(__name__)
+CORS(app)
+
+# ============================================================
+# GOOGLE ROUTES API
+# ============================================================
+
+GOOGLE_ROUTES_API_KEY = os.getenv("GOOGLE_ROUTES_API_KEY")
+
+
+@app.route("/rota", methods=["POST"])
+def calcular_rota():
+    try:
+        print("================================")
+        print("REQUISIÇÃO /rota RECEBIDA")
+        print("Dados:", request.get_json())
+        print("API KEY configurada:", GOOGLE_ROUTES_API_KEY is not None)
+        print("================================")
+        data = request.get_json()
+
+        if not data:
+            return jsonify({
+                "erro": "Nenhum dado recebido"
+            }), 400
+
+        origin = data.get("origin")
+        destination = data.get("destination")
+
+        if not origin or not destination:
+            return jsonify({
+                "erro": "Origem e destino são obrigatórios"
+            }), 400
+
+        url = (
+            "https://routes.googleapis.com/"
+            "directions/v2:computeRoutes"
+        )
+
+        headers = {
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": GOOGLE_ROUTES_API_KEY,
+            "X-Goog-FieldMask": (
+                "routes.distanceMeters,"
+                "routes.duration,"
+                "routes.polyline.encodedPolyline"
+            )
+        }
+
+        body = {
+            "origin": {
+                "location": {
+                    "latLng": {
+                        "latitude": origin["latitude"],
+                        "longitude": origin["longitude"]
+                    }
+                }
+            },
+            "destination": {
+                "location": {
+                    "latLng": {
+                        "latitude": destination["latitude"],
+                        "longitude": destination["longitude"]
+                    }
+                }
+            },
+            "travelMode": "DRIVE",
+            "routingPreference": "TRAFFIC_AWARE",
+            "computeAlternativeRoutes": False,
+            "languageCode": "pt-BR",
+            "units": "METRIC"
+        }
+
+        resposta = requests.post(
+            url,
+            headers=headers,
+            json=body,
+            timeout=15
+        )
+
+        if resposta.status_code != 200:
+            print("Erro Google Routes:")
+            print(resposta.text)
+
+            return jsonify({
+                "erro": "Erro na Google Routes API",
+                "detalhes": resposta.text
+            }), resposta.status_code
+
+        resultado = resposta.json()
+
+        if not resultado.get("routes"):
+            return jsonify({
+                "erro": "Nenhuma rota encontrada"
+            }), 404
+
+        rota = resultado["routes"][0]
+
+        return jsonify({
+            "distanceMeters": rota.get("distanceMeters"),
+            "duration": rota.get("duration"),
+            "encodedPolyline":
+                rota["polyline"]["encodedPolyline"]
+        })
+
+    except Exception as erro:
+        print("Erro ao calcular rota:", erro)
+
+        return jsonify({
+            "erro": str(erro)
+        }), 500
 
 # ============================================================
 # CONFIGURAÇÕES
@@ -356,6 +468,9 @@ if __name__ == "__main__":
     print(f"Porta: {API_PORT}")
     print("GET: /dados")
     print("POST: /dados")
+    print("================================")
+    print("Rotas dos sensores:")
+    print("POST: /rota")
     print("================================")
 
     serial_thread = threading.Thread(

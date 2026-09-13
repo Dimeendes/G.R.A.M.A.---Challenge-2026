@@ -7,10 +7,12 @@ import { CRITICAL_HEIGHT, getGrassHeightStatus } from './data/sensorsData';
 import { useSensors } from './context/SensorsContext';
 
 export default function Sensors() {
+  const { user, logout } = useAuth();
   const router = useRouter();
+  const isGerente = user?.role === "gerente";
+  const isFuncionario = user?.role === "funcionario";
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedSensor, setSelectedSensor] = useState(null);
-  const { logout } = useAuth();
   const { sensors } = useSensors();
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -177,6 +179,22 @@ export default function Sensors() {
                     Previsão calculada pelo algoritmo de crescimento da grama.
                   </Text>
 
+                  {!isFuncionario && (
+                    <TouchableOpacity
+                      style={styles.orderButton}
+                      onPress={() => {
+                        setModalVisible(false);
+                        router.push({
+                          pathname: '/OrdemServico',
+                          params: { sensorId: String(selectedSensor.id) },
+                        });
+                      }}
+                    >
+                      <Ionicons name="document-text-outline" size={18} color="#fff" />
+                      <Text style={styles.orderButtonText}>Criar ordem de serviço</Text>
+                    </TouchableOpacity>
+                  )}
+
                   <TouchableOpacity
                     style={styles.closeButton}
                     onPress={() => setModalVisible(false)}
@@ -274,7 +292,9 @@ const styles = StyleSheet.create({
   detailText:          { flex: 1, minWidth: 0, flexDirection: 'column', alignItems: 'flex-start', gap: 2 },
   detailLabel:         { color: '#777', fontSize: 12, flexShrink: 0 },
   detailValue:         { color: '#333', fontSize: 14, fontWeight: '600', marginTop: 0, flexShrink: 1 },
-  closeButton:         { backgroundColor: '#5E22F3', borderRadius: 10, padding: 14, alignItems: 'center', marginTop: 24 },
+  orderButton:         { backgroundColor: '#16a34a', borderRadius: 10, padding: 14, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, marginTop: 20 },
+  orderButtonText:     { color: '#fff', fontWeight: 'bold', fontSize: 15 },
+  closeButton:         { backgroundColor: '#5E22F3', borderRadius: 10, padding: 14, alignItems: 'center', marginTop: 12 },
   closeButtonText:     { color: '#fff', fontWeight: 'bold', fontSize: 15 },
   forecastNote:         { color: '#777', fontSize: 12, lineHeight: 17, marginTop: 14 },
   coreInfo:            { flexDirection: 'column'}

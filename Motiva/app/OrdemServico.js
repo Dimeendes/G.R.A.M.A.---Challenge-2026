@@ -18,9 +18,7 @@ import { getGrassHeightStatus } from "./data/sensorsData";
  
 export default function OrdemServico() {
   const router = useRouter();
-  const { sensorId } = useLocalSearchParams();
-  const { user, logout } = useAuth();
-  const isFuncionario = user?.role === "funcionario";
+  const { logout } = useAuth();
   const [modalOS, setModalOS] = useState(false);
   const [modalEquipe, setModalEquipe] = useState(false);
   const [modalSensor, setModalSensor] = useState(false);
@@ -33,57 +31,7 @@ export default function OrdemServico() {
   const [sensorSelecionado, setSensorSelecionado] = useState(null);
   const [mensagemValidacao, setMensagemValidacao] = useState("");
   const { sensors } = useSensors();
-  const sensorParamProcessado = useRef(null);
 
-  useEffect(() => {
-    if (!sensorId || !sensors.length || sensorParamProcessado.current === sensorId) {
-      return;
-    }
-
-    const sensor = sensors.find((item) => String(item.id) === String(sensorId));
-
-    if (sensor) {
-      sensorParamProcessado.current = sensorId;
-      setSensorSelecionado(sensor);
-      setMensagemValidacao("");
-      setModalOS(true);
-    }
-  }, [sensorId, sensors]);
- 
-  useEffect(() => {
-    async function carregarOrdens() {
-      try {
-        const ordensSalvas = await AsyncStorage.getItem("ordensServico");
-        const ordens = ordensSalvas ? JSON.parse(ordensSalvas) : [];
- 
-        if (
-          quantidadeInicial.current !== null &&
-          isFuncionario &&
-          ordens.length > quantidadeInicial.current
-        ) {
-          const novasOrdens = ordens.length - quantidadeInicial.current;
-          const mensagem = `${novasOrdens} nova${novasOrdens > 1 ? "s" : ""} ordem${novasOrdens > 1 ? "s" : ""} de serviço recebida${novasOrdens > 1 ? "s" : ""}.`;
-          setNotificacao(mensagem);
-          Alert.alert("Nova ordem de serviço", mensagem);
-        }
- 
-        quantidadeInicial.current = ordens.length;
-        setOrdensServico(ordens);
-      } catch (error) {
-        console.error("Erro ao carregar ordens de serviço", error);
-      }
-    }
- 
-    carregarOrdens();
-    const intervalo = setInterval(carregarOrdens, 2000);
-    return () => clearInterval(intervalo);
-  }, [isFuncionario]);
- 
-  async function salvarOrdens(ordens) {
-    setOrdensServico(ordens);
-    await AsyncStorage.setItem("ordensServico", JSON.stringify(ordens));
-  }
- 
   function obterAlturaAtual(ordem) {
     const sensorAtual = sensors.find((sensor) => sensor.id === ordem.sensorId);
     return sensorAtual?.grassHeight ?? ordem.alturaGrama;
@@ -178,8 +126,8 @@ export default function OrdemServico() {
       dataLimite: obterDataLimite(sensorSelecionado),
       status: "Pendente",
     };
- 
-    salvarOrdens([novaOrdem, ...ordensServico]);
+
+    setOrdensServico((ordensAtuais) => [novaOrdem, ...ordensAtuais]);
     fecharModalOS();
   }
  
@@ -215,17 +163,7 @@ export default function OrdemServico() {
               </TouchableOpacity>
             )}
           </View>
- 
-          {notificacao && isFuncionario && (
-            <TouchableOpacity
-              style={styles.notification}
-              onPress={() => setNotificacao("")}
-            >
-              <Ionicons name="notifications-outline" size={20} color="#166534" />
-              <Text style={styles.notificationText}>{notificacao}</Text>
-            </TouchableOpacity>
-          )}
- 
+
           {ordensServico.length === 0 ? (
             <View style={styles.emptyState}>
               <Text style={styles.emptyTitle}>Nenhuma ordem de serviço</Text>

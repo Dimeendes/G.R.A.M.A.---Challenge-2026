@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Marker } from "react-native-maps";
  
-export default function SensorMarker({ sensor }) {
+export default function SensorMarker({ sensor, onPress }) {
   return (
 <Marker
       coordinate={{
@@ -11,6 +11,7 @@ export default function SensorMarker({ sensor }) {
       }}
       title={sensor.name}
       description={`Altura da vegetação: ${sensor.grassHeight} cm`}
+      onPress={onPress}
 >
 <View style={styles.marker}>
 <Text style={styles.text}>🌱</Text>
@@ -20,6 +21,18 @@ export default function SensorMarker({ sensor }) {
 }
  
 const styles = StyleSheet.create({
-  marker: { width: 45, height: 45, borderRadius: 25, backgroundColor: "white", alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: "green" },
-  text:   { fontSize: 24 }
+  marker: {
+    width: 45,
+    height: 45,
+    borderRadius: 25,
+    backgroundColor: "white",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "green",
+  },
+ 
+  text: {
+    fontSize: 24,
+  },
 });

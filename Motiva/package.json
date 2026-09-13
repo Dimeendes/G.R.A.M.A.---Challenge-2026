@@ -10,6 +10,7 @@
     "dev": "start cmd /k \"py src/TF-Luna.py\" && start cmd /k \"py app/data/SensorMock.py\" && start cmd /k \"npx expo start\""
   },
   "dependencies": {
+    "@mapbox/polyline": "^1.2.1",
     "@react-native-async-storage/async-storage": "2.2.0",
     "dotenv": "^16.4.7",
     "expo": "~54.0.34",

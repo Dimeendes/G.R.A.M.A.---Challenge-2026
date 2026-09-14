@@ -1,18 +1,22 @@
-import { useEffect, useState } from "react";
-import { StyleSheet, View, Text, TouchableOpacity, ActivityIndicator } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { StyleSheet, View, Text, TouchableOpacity, ActivityIndicator, TextInput } from "react-native";
+import { useRouter } from "expo-router";
 import MapView, {
   Marker,
   Polyline,
   PROVIDER_GOOGLE,
 } from "react-native-maps";
 import * as Location from "expo-location";
- 
+import { Ionicons } from '@expo/vector-icons';
 import { useSensors } from "./context/SensorsContext";
+import { useAuth } from "./context/AuthContext";
 import markers from "./data/marker";
 import { buscarRota } from "../services/rotas";
  
 export default function Map() {
   const { sensors, isLoading } = useSensors();
+  const { logout } = useAuth();
+  const router = useRouter();
  
   const [localizacaoUsuario, setLocalizacaoUsuario] = useState(null);
   const [sensorSelecionado, setSensorSelecionado] = useState(null);
@@ -23,6 +27,9 @@ export default function Map() {
  
   const [carregandoLocalizacao, setCarregandoLocalizacao] = useState(true);
   const [calculandoRota, setCalculandoRota] = useState(false);
+  const [sensorIdBusca, setSensorIdBusca] = useState("");
+  const [mensagemBusca, setMensagemBusca] = useState("");
+  const mapRef = useRef(null);
  
   // ============================================================
   // PEGA A LOCALIZAÇÃO DO USUÁRIO
@@ -94,6 +101,48 @@ export default function Map() {
     setDistancia(null);
     setDuracao(null);
   }
+
+  function focarNoSensor(sensor, marker) {
+    setMensagemBusca("");
+    setSensorIdBusca(String(sensor.id));
+    mapRef.current?.animateToRegion(
+      {
+        latitude: marker.latitude,
+        longitude: marker.longitude,
+        latitudeDelta: 0.02,
+        longitudeDelta: 0.02,
+      },
+      500
+    );
+    selecionarSensor(sensor, marker);
+  }
+
+  function buscarSensorPorId() {
+    const idBuscado = sensorIdBusca.trim();
+    const marker = markers.find(
+      (item) => String(item.id) === idBuscado
+    );
+    const sensor = sensors.find(
+      (item) => String(item.id) === idBuscado
+    );
+
+    if (!marker || !sensor) {
+      setMensagemBusca("Sensor não encontrado.");
+      return;
+    }
+
+    focarNoSensor(sensor, marker);
+  }
+
+  const sensoresSugeridos = sensorIdBusca === ""
+    ? []
+    : markers
+      .filter((marker) => String(marker.id).startsWith(sensorIdBusca))
+      .map((marker) => ({
+        marker,
+        sensor: sensors.find((item) => Number(item.id) === Number(marker.id)),
+      }))
+      .filter(({ sensor }) => sensor);
  
   // ============================================================
   // CALCULAR ROTA
@@ -134,8 +183,54 @@ export default function Map() {
  
   return (
 <View style={styles.container}>
+
+      <View style={styles.searchContainer}>
+        <Ionicons name="search-outline" size={20} color="#666" />
+        <TextInput
+          style={styles.searchInput}
+          value={sensorIdBusca}
+          onChangeText={(value) => {
+            setSensorIdBusca(value.replace(/[^0-9]/g, ""));
+            setMensagemBusca("");
+          }}
+          onSubmitEditing={buscarSensorPorId}
+          placeholder="Buscar sensor por ID"
+          placeholderTextColor="#777"
+          keyboardType="number-pad"
+          returnKeyType="search"
+        />
+        <TouchableOpacity
+          style={styles.searchButton}
+          onPress={buscarSensorPorId}
+          accessibilityLabel="Buscar sensor"
+        >
+          <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
+        </TouchableOpacity>
+      </View>
+
+      {mensagemBusca !== "" && (
+        <Text style={styles.searchMessage}>{mensagemBusca}</Text>
+      )}
+
+      {sensoresSugeridos.length > 0 && (
+        <View style={styles.suggestionsContainer}>
+          {sensoresSugeridos.map(({ marker, sensor }) => (
+            <TouchableOpacity
+              key={marker.id}
+              style={styles.suggestion}
+              onPress={() => focarNoSensor(sensor, marker)}
+            >
+              <Ionicons name="radio-outline" size={18} color="#5E22F3" />
+              <Text style={styles.suggestionText}>
+                Sensor #{sensor.id}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
  
       <MapView
+        ref={mapRef}
         provider={PROVIDER_GOOGLE}
         style={styles.map}
  
@@ -328,17 +423,51 @@ export default function Map() {
               setRota([]);
               setDistancia(null);
               setDuracao(null);
-            }}
->
+            }}>
  
-            <Text style={styles.closeButtonText}>
-              Fechar
-</Text>
+            <Text style={styles.closeButtonText}>Fechar</Text>
  
           </TouchableOpacity>
  
         </View>
       )}
+      <View style={styles.navigationContainer}>
+              <View style={styles.navigationBar}>
+                <TouchableOpacity style={styles.navButton} onPress={() => router.push('/sensors')}>
+                  <Ionicons name="radio-outline" size={24} color="#000" />
+                  <Text style={styles.iconText}>Sensores</Text>
+                </TouchableOpacity>
+      
+                <TouchableOpacity style={styles.navButton} onPress={() => router.push('/map')}>
+                  <Ionicons name="map-outline" size={24} color="#000" />
+                  <Text style={styles.iconText}>Mapa</Text>
+                </TouchableOpacity>
+      
+                <TouchableOpacity style={styles.navButton}>
+                  <View style={styles.activeIcon}>
+                    <Ionicons name="map" size={24} color="#5E22F3" />
+                  </View>
+                  <Text style={styles.activeIconText}>Mapa</Text>
+                </TouchableOpacity>
+      
+                <TouchableOpacity style={styles.navButton} onPress={() => router.push('/OrdemServico')}>
+                  <Ionicons name="document-outline" size={24} color="#000" />
+                  <Text style={styles.iconText}>OS</Text>
+                </TouchableOpacity>
+      
+                <TouchableOpacity
+                  style={styles.navButton}
+                  onPress={() => {
+                    logout();
+                    router.push('/');
+                  }}
+                >
+                  <Ionicons name="log-out-outline" size={24} color="#000" />
+                  <Text style={styles.iconText}>Sair</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+      
  
     </View>
   );
@@ -396,6 +525,88 @@ const styles = StyleSheet.create({
   map: {
     width: "100%",
     height: "100%",
+  },
+
+  searchContainer: {
+    position: "absolute",
+    top: 20,
+    left: 16,
+    right: 16,
+    zIndex: 5,
+    elevation: 5,
+    height: 52,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    paddingLeft: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
+
+  searchInput: {
+    flex: 1,
+    color: "#333",
+    fontSize: 15,
+    marginLeft: 8,
+  },
+
+  searchButton: {
+    height: 52,
+    width: 52,
+    backgroundColor: "#5E22F3",
+    borderTopRightRadius: 12,
+    borderBottomRightRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  searchMessage: {
+    position: "absolute",
+    top: 80,
+    left: 20,
+    zIndex: 5,
+    elevation: 5,
+    backgroundColor: "#FFFFFF",
+    color: "#B91C1C",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    fontSize: 13,
+  },
+
+  suggestionsContainer: {
+    position: "absolute",
+    top: 78,
+    left: 16,
+    right: 16,
+    zIndex: 6,
+    elevation: 6,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 10,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
+
+  suggestion: {
+    minHeight: 44,
+    paddingHorizontal: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "#EEEEEE",
+  },
+
+  suggestionText: {
+    color: "#333",
+    fontSize: 14,
+    fontWeight: "600",
   },
  
   marker: {
@@ -466,7 +677,7 @@ const styles = StyleSheet.create({
  
   sensorPanel: {
     position: "absolute",
-    bottom: 20,
+    bottom: 110,
     left: 20,
     right: 20,
  
@@ -556,6 +767,57 @@ const styles = StyleSheet.create({
   closeButtonText: {
     color: "#6B7280",
     fontWeight: "600",
+  },
+
+  navigationContainer: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+    elevation: 10,
+  },
+
+  navigationBar: {
+    height: 95,
+    backgroundColor: "#FFFFFF",
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 8,
+  },
+
+  navButton: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    transform: [{ translateY: -12 }],
+  },
+
+  activeIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: "#5d22f244",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+
+  iconText: {
+    color: "#000",
+    fontSize: 11,
+    marginTop: 4,
+  },
+
+  activeIconText: {
+    color: "#5E22F3",
+    fontSize: 11,
+    fontWeight: "bold",
   },
  
 });

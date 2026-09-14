@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from './context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,21 +14,30 @@ export default function Sensors() {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedSensor, setSelectedSensor] = useState(null);
   const { sensors } = useSensors();
-  const [searchTerm, setSearchTerm] = useState('');
+  const [sortConfig, setSortConfig] = useState(null);
+  const [sortModalVisible, setSortModalVisible] = useState(false);
 
-  const filteredSensors = useMemo(() => {
-    const query = searchTerm.trim().toLowerCase();
-
-    if (!query) {
+  const sortedSensors = useMemo(() => {
+    if (!sortConfig) {
       return sensors;
     }
 
-    return sensors.filter((sensor) => [
-      sensor.id,
-      sensor.highway,
-      sensor.grassHeight,
-    ].some((value) => String(value ?? '').toLowerCase().includes(query)));
-  }, [searchTerm, sensors]);
+    return [...sensors].sort((firstSensor, secondSensor) => {
+      const firstValue = Number(firstSensor[sortConfig.field]);
+      const secondValue = Number(secondSensor[sortConfig.field]);
+
+      return (firstValue - secondValue) * sortConfig.direction;
+    });
+  }, [sensors, sortConfig]);
+
+  const sortOptions = [
+    { label: 'Altura: maior para menor', field: 'grassHeight', direction: -1 },
+    { label: 'Altura: menor para maior', field: 'grassHeight', direction: 1 },
+    { label: 'ID: maior para menor', field: 'id', direction: -1 },
+    { label: 'ID: menor para maior', field: 'id', direction: 1 },
+    { label: 'KM: maior para menor', field: 'km', direction: -1 },
+    { label: 'KM: menor para maior', field: 'km', direction: 1 },
+  ];
 
   return (
     <>
@@ -40,23 +49,15 @@ export default function Sensors() {
         <View style={styles.content}>
           <Text style={styles.title}>Sensores</Text>
           <Text style={styles.subtitle}>
-            {filteredSensors.length} de {sensors.length} sensores monitorados
+            {sensors.length} sensores monitorados
           </Text>
 
-          <View style={styles.searchContainer}>
-            <View style={styles.searchInputContainer}>
-              <Ionicons name="search-outline" size={18} color="#666" />
-              <TextInput
-                style={styles.searchInput}
-                placeholder="Digite o ID, rodovia ou altura da grama"
-                placeholderTextColor="#666"
-                value={searchTerm}
-                onChangeText={setSearchTerm}
-              />
-            </View>
-          </View>
+          <TouchableOpacity style={styles.sortButton} onPress={() => setSortModalVisible(true)}>
+            <Ionicons name="funnel-outline" size={18} color="#fff" />
+            <Text style={styles.sortButtonText}>Ordenar sensores</Text>
+          </TouchableOpacity>
 
-          {filteredSensors.map((sensor) => {
+          {sortedSensors.map((sensor) => {
             const status = getGrassHeightStatus(sensor.grassHeight);
 
             return (
@@ -96,13 +97,41 @@ export default function Sensors() {
             );
           })}
 
-          {filteredSensors.length === 0 && (
+          {sortedSensors.length === 0 && (
             <View style={styles.emptyState}>
               <Text style={styles.emptyStateText}>Nenhum sensor encontrado com esse filtro.</Text>
             </View>
           )}
         </View>
       </ScrollView>
+      {sortModalVisible && (
+        <View style={styles.sortModalOverlay}>
+          <View style={styles.sortModalContent}>
+            <Text style={styles.sortModalTitle}>Ordenar sensores</Text>
+            <Text style={styles.sortModalSubtitle}>Escolha o critério e a direção:</Text>
+
+            {sortOptions.map((option) => (
+              <TouchableOpacity
+                key={`${option.field}-${option.direction}`}
+                style={styles.sortOption}
+                onPress={() => {
+                  setSortConfig(option);
+                  setSortModalVisible(false);
+                }}
+              >
+                <Text style={styles.sortOptionText}>{option.label}</Text>
+              </TouchableOpacity>
+            ))}
+
+            <TouchableOpacity
+              style={styles.sortCancelButton}
+              onPress={() => setSortModalVisible(false)}
+            >
+              <Text style={styles.sortCancelButtonText}>Cancelar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
       {modalVisible && selectedSensor && (
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -257,9 +286,16 @@ const styles = StyleSheet.create({
   content:             { padding: 16 },
   title:               { fontSize: 24, fontWeight: 'bold', color: '#333', marginBottom: 4 },
   subtitle:            { fontSize: 14, color: '#666', marginBottom: 16 },
-  searchContainer:     { backgroundColor: '#fff', borderRadius: 16, padding: 12, marginBottom: 16, borderWidth: 1, borderColor: '#e5e7eb', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 4, elevation: 2 },
-  searchInputContainer:{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#f5f5f5', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10 },
-  searchInput:         { flex: 1, marginLeft: 8, color: '#333', fontSize: 15 },
+  sortButton:          { backgroundColor: '#5E22F3', borderRadius: 10, padding: 13, marginBottom: 16, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8 },
+  sortButtonText:      { color: '#fff', fontWeight: 'bold', fontSize: 15 },
+  sortModalOverlay:    { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, zIndex: 20, elevation: 20, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: 'rgba(0, 0, 0, 0.5)' },
+  sortModalContent:    { width: '100%', maxWidth: 420, backgroundColor: '#fff', borderRadius: 16, padding: 20 },
+  sortModalTitle:      { fontSize: 20, fontWeight: 'bold', color: '#333' },
+  sortModalSubtitle:   { color: '#666', fontSize: 14, marginTop: 4, marginBottom: 14 },
+  sortOption:          { paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: '#eee' },
+  sortOptionText:     { color: '#333', fontSize: 15, fontWeight: '600' },
+  sortCancelButton:   { backgroundColor: '#5E22F3', borderRadius: 10, padding: 13, alignItems: 'center', marginTop: 16 },
+  sortCancelButtonText:{ color: '#fff', fontWeight: 'bold', fontSize: 15 },
   card:                { backgroundColor: '#d0d0d0', borderRadius: 16, borderWidth: 1, borderColor: '#dfdfdf', padding: 16, marginBottom: 12 },
   cardHeader:          { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   cardTitle:           { fontSize: 18, fontWeight: 'bold', color: '#333' },

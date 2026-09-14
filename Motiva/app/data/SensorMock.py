@@ -2,8 +2,6 @@ import random
 import requests
 import time
 
-height = random.randint(2, 5)
-
 Sensores = {
     'ID02': {
         'id': 2,
@@ -75,8 +73,9 @@ Sensores = {
 
 url = "http://127.0.0.1:5000/dados"
 
-
-for sensor in Sensores.values():
+while True:
+    height = random.randint(2, 5)
+    for sensor in Sensores.values():
 
                 if sensor['grassHeight'] >= 30:
                     sensor['grassHeight'] = 9
@@ -105,4 +104,4 @@ for sensor in Sensores.values():
                         )
                 except requests.exceptions.RequestException as erro:
                     print(f"Erro ao enviar sensor {sensor['id']}: {erro}")
-time.sleep(5)
+    time.sleep(5)

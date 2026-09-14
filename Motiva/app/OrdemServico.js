@@ -15,7 +15,10 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useAuth } from "./context/AuthContext";
 import { useSensors } from "./context/SensorsContext";
 import { getGrassHeightStatus } from "./data/sensorsData";
-
+import Constants from "expo-constants";
+ 
+const { IPESP32 } = Constants.expoConfig?.extra || {};
+ 
 export default function OrdemServico() {
   const router = useRouter();
   const { sensorId } = useLocalSearchParams();
@@ -35,7 +38,7 @@ export default function OrdemServico() {
   const [mensagemValidacao, setMensagemValidacao] = useState("");
   const { sensors } = useSensors();
   const sensorParamProcessado = useRef(null);
-
+ 
   useEffect(() => {
     if (
       !sensorId ||
@@ -44,9 +47,9 @@ export default function OrdemServico() {
     ) {
       return;
     }
-
+ 
     const sensor = sensors.find((item) => String(item.id) === String(sensorId));
-
+ 
     if (sensor) {
       sensorParamProcessado.current = sensorId;
       setSensorSelecionado(sensor);
@@ -87,20 +90,20 @@ export default function OrdemServico() {
     const sensorAtual = sensors.find((sensor) => sensor.id === ordem.sensorId);
     return sensorAtual?.grassHeight ?? ordem.alturaGrama;
   }
-
+ 
   function converterData(data) {
     if (!data || data === "Não disponível") {
       return Number.POSITIVE_INFINITY;
     }
-
+ 
     const [dia, mes, ano] = data.split("/").map(Number);
     return new Date(ano, mes - 1, dia).getTime();
   }
-
+ 
   const ordensOrdenadas = [...ordensServico].sort((ordemA, ordemB) => {
     return converterData(ordemA.dataLimite) - converterData(ordemB.dataLimite);
   });
-
+ 
   const ordensExibidas = isFuncionario
     ? ordensOrdenadas
     : ordensOrdenadas.filter((ordem) =>
@@ -108,18 +111,18 @@ export default function OrdemServico() {
           ? ordem.status === "Concluída"
           : ordem.status !== "Concluída",
       );
-
+ 
   function limparFormulario() {
     setEquipe("");
     setSensorSelecionado(null);
     setMensagemValidacao("");
   }
-
+ 
   function deletarOrdemServico(id) {
     setOrdemParaExcluir(id);
     setModalExclusao(true);
   }
-
+ 
   function confirmarExclusao() {
     setOrdensServico((ordensAtuais) =>
       ordensAtuais.filter((ordem) => ordem.id !== ordemParaExcluir),
@@ -131,19 +134,57 @@ export default function OrdemServico() {
     setOrdemParaExcluir(null);
     setModalExclusao(false);
   }
-
-  function concluirOrdemServico(id) {
-    const ordensAtualizadas = ordensServico.map((ordem) =>
-      ordem.id === id
-        ? {
-            ...ordem,
-            status: "Concluída",
-            dataConclusao: formatarData(new Date()),
-          }
-        : ordem,
-    );
-
-    salvarOrdens(ordensAtualizadas);
+ 
+  async function concluirOrdemServico(id) {
+    const ordem = ordensServico.find((item) => item.id === id);
+    if (!ordem) return;
+ 
+    const enderecoConfigurado = String(IPESP32 || "").replace(/\/$/, "");
+    const enderecoApi = /^https?:\/\//i.test(enderecoConfigurado)
+      ? enderecoConfigurado
+      : `http://${enderecoConfigurado}`;
+    const endpoint = /:\d+$/.test(enderecoApi)
+      ? `${enderecoApi}/verificar`
+      : `${enderecoApi}:5000/verificar`;
+ 
+    try {
+      console.log("Chamando API de verificação:", endpoint);
+      const resposta = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: ordem.sensorId }),
+      });
+      const resultado = await resposta.json();
+ 
+      if (!resposta.ok) {
+        throw new Error(resultado.erro || "A API recusou a verificação.");
+      }
+ 
+      const alturaMedida = Number(resultado.altura);
+      if (!Number.isFinite(alturaMedida)) {
+        throw new Error("A API não retornou uma altura válida.");
+      }
+ 
+      const ordensAtualizadas = ordensServico.map((ordemAtual) =>
+        ordemAtual.id === id
+          ? {
+              ...ordemAtual,
+              status: "Concluída",
+              alturaGrama: alturaMedida,
+              dataConclusao: formatarData(new Date()),
+            }
+          : ordemAtual,
+      );
+ 
+      await salvarOrdens(ordensAtualizadas);
+      Alert.alert("Medição realizada", `Altura medida: ${alturaMedida} cm.`);
+    } catch (erro) {
+      console.error("Erro ao verificar o sensor:", erro);
+      Alert.alert(
+        "Erro de conexão",
+        erro.message || "Não foi possível acessar a API Python.",
+      );
+    }
   }
   function fecharModalOS() {
     setModalOS(false);
@@ -151,30 +192,30 @@ export default function OrdemServico() {
     setModalSensor(false);
     limparFormulario();
   }
-
+ 
   function formatarData(data) {
     return data.toLocaleDateString("pt-BR");
   }
-
+ 
   function adicionarUmMes(data) {
     const dataLimite = new Date(data);
     dataLimite.setMonth(dataLimite.getMonth() + 1);
     return dataLimite;
   }
-
+ 
   function obterDataLimite(sensor) {
     const dataCriacao = new Date();
     const sensorCritico =
       Number(sensor.grassHeight) >= 30 ||
       sensor.criticalDate === "Já está crítico";
-
+ 
     if (sensorCritico) {
       return formatarData(adicionarUmMes(dataCriacao));
     }
-
+ 
     return sensor.criticalDate || "Não disponível";
   }
-
+ 
   function enviarOrdemServico() {
     if (!equipe || !sensorSelecionado) {
       if (!equipe && !sensorSelecionado) {
@@ -186,7 +227,7 @@ export default function OrdemServico() {
       }
       return;
     }
-
+ 
     const novaOrdem = {
       id: Date.now(),
       equipe,
@@ -198,12 +239,12 @@ export default function OrdemServico() {
       dataLimite: obterDataLimite(sensorSelecionado),
       status: "Pendente",
     };
-
+ 
     setOrdensServico((ordensAtuais) => [novaOrdem, ...ordensAtuais]);
     salvarOrdens([novaOrdem, ...ordensServico]);
     fecharModalOS();
   }
-
+ 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -212,7 +253,7 @@ export default function OrdemServico() {
           style={styles.logo}
         />
       </View>
-
+ 
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
@@ -313,7 +354,7 @@ export default function OrdemServico() {
                   : status.label === "Atenção"
                     ? "Alerta"
                     : "Crítico";
-
+ 
               return (
                 <View style={styles.orderCard} key={ordem.id}>
                   <View style={styles.orderHeader}>
@@ -393,7 +434,7 @@ export default function OrdemServico() {
           )}
         </View>
       </ScrollView>
-
+ 
       <Modal
         visible={modalOS}
         transparent
@@ -408,7 +449,7 @@ export default function OrdemServico() {
                 <Text style={styles.closeText}>Fechar</Text>
               </TouchableOpacity>
             </View>
-
+ 
             <ScrollView showsVerticalScrollIndicator={false}>
               <Text style={styles.label}>Equipe</Text>
               <TouchableOpacity
@@ -422,7 +463,7 @@ export default function OrdemServico() {
                   {equipe || "Selecione uma equipe"}
                 </Text>
               </TouchableOpacity>
-
+ 
               <Text style={styles.label}>Sensor</Text>
               <TouchableOpacity
                 style={styles.select}
@@ -437,7 +478,7 @@ export default function OrdemServico() {
                     : "Selecione um sensor"}
                 </Text>
               </TouchableOpacity>
-
+ 
               {sensorSelecionado && (
                 <View style={styles.sensorPreview}>
                   <Text style={styles.previewText}>
@@ -451,7 +492,7 @@ export default function OrdemServico() {
                   </Text>
                 </View>
               )}
-
+ 
               {mensagemValidacao && (
                 <View style={styles.validationMessage}>
                   <Ionicons
@@ -462,7 +503,7 @@ export default function OrdemServico() {
                   <Text style={styles.validationText}>{mensagemValidacao}</Text>
                 </View>
               )}
-
+ 
               <TouchableOpacity
                 style={styles.submitButton}
                 onPress={enviarOrdemServico}
@@ -475,7 +516,7 @@ export default function OrdemServico() {
           </View>
         </View>
       </Modal>
-
+ 
       <Modal
         visible={modalEquipe}
         transparent
@@ -506,7 +547,7 @@ export default function OrdemServico() {
           </View>
         </View>
       </Modal>
-
+ 
       <Modal
         visible={modalSensor}
         transparent
@@ -529,7 +570,7 @@ export default function OrdemServico() {
                     : status.label === "Atenção"
                       ? "Alerta"
                       : "Crítico";
-
+ 
                 return (
                   <TouchableOpacity
                     key={sensor.id}
@@ -573,7 +614,7 @@ export default function OrdemServico() {
           </View>
         </View>
       </Modal>
-
+ 
       <Modal
         visible={modalExclusao}
         transparent
@@ -606,7 +647,7 @@ export default function OrdemServico() {
           </View>
         </View>
       </Modal>
-
+ 
       <View style={styles.navigationContainer}>
         <View style={styles.navigationBar}>
           <TouchableOpacity
@@ -616,7 +657,7 @@ export default function OrdemServico() {
             <Ionicons name="radio-outline" size={24} color="#000" />
             <Text style={styles.iconText}>Sensores</Text>
           </TouchableOpacity>
-
+ 
           <TouchableOpacity
             style={styles.navButton}
             onPress={() => router.push("/map")}
@@ -624,7 +665,7 @@ export default function OrdemServico() {
             <Ionicons name="map-outline" size={24} color="#000" />
             <Text style={styles.iconText}>Mapa</Text>
           </TouchableOpacity>
-
+ 
           <TouchableOpacity
             style={styles.navButton}
             onPress={() => router.push("/home")}
@@ -632,14 +673,14 @@ export default function OrdemServico() {
             <Ionicons name="home-outline" size={24} color="#000" />
             <Text style={styles.iconText}>Home</Text>
           </TouchableOpacity>
-
+ 
           <TouchableOpacity style={styles.navButton}>
             <View style={styles.activeIcon}>
               <Ionicons name="document" size={24} color="#5E22F3" />
             </View>
             <Text style={styles.activeIconText}>OS</Text>
           </TouchableOpacity>
-
+ 
           <TouchableOpacity
             style={styles.navButton}
             onPress={() => {
@@ -655,7 +696,7 @@ export default function OrdemServico() {
     </View>
   );
 }
-
+ 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f5f5f5" },
   scroll: { flex: 1 },
@@ -1021,3 +1062,4 @@ const styles = StyleSheet.create({
   },
   deleteConfirmText: { color: "#fff", fontWeight: "bold" },
 });
+ 

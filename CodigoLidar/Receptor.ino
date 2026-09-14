@@ -1,49 +1,288 @@
 #include <esp_now.h>
 #include <WiFi.h>
+#include <string.h>
  
-// Estrutura exemplo para receber dados
-// Deve corresponder à estrutura do remetente
-typedef struct struct_message {
-    int id;
-    char highWay[10];
-    int km;
-    int grassHeight;
-} struct_message;
+unsigned char buf1[] = {
+  0x5A, 0x05, 0x00, 0x01, 0x60
+};
  
-// Crie uma struct_message chamada myData
-struct_message myData;
+uint8_t broadcastAdress[] = {
+  0x00, 0x70, 0x07, 0x26, 0x33, 0xcc
+};
+uint8_t lidarAddress[6];
+bool lidarAddressKnown = false;
  
-unsigned long lastReceiveTime = 0;  // Última vez que recebemos dados
-const unsigned long timeout = 5000; // Tempo limite para considerar que a conexão foi perdida (em milissegundos)
+bool isPeerConnected = false;
  
-// Função de callback que será executada quando os dados forem recebidos
-void OnDataRecv(const esp_now_recv_info_t *info, const uint8_t *incomingData, int len) {
-  memcpy(&myData, incomingData, sizeof(myData));
-  lastReceiveTime = millis(); // Atualiza a última vez que recebemos dados
+typedef struct struct_message_recv {
+  int id;
+  char highWay[10];
+  int km;
+  int grassHeight;
+  int verificacao;
+} struct_message_recv;
+ 
+typedef struct struct_message_sent {
+  int id;
+  int comando;
+} struct_message_sent;
+ 
+struct_message_recv DataReceived;
+struct_message_sent DataSent;
+int verificacaoSolicitada = 0;
+ 
+unsigned long lastReceiveTime = 0;
+const unsigned long timeout = 5000;
+ 
+esp_now_peer_info_t peerInfo;
+ 
+ 
+// =========================
+// ADICIONAR PEER
+// =========================
+ 
+void addPeer() {
+ 
+  if (esp_now_is_peer_exist(broadcastAdress)) {
+    esp_now_del_peer(broadcastAdress);
+  }
+ 
+  memset(&peerInfo, 0, sizeof(peerInfo));
+ 
+  memcpy(peerInfo.peer_addr, broadcastAdress, 6);
+ 
+  peerInfo.channel = 0;
+  peerInfo.encrypt = false;
+ 
+  if (esp_now_add_peer(&peerInfo) == ESP_OK) {
+ 
+    isPeerConnected = true;
+ 
+    Serial.println("Peer adicionado com sucesso!");
+ 
+  } else {
+ 
+    isPeerConnected = false;
+ 
+    Serial.println("Erro ao adicionar peer!");
+  }
 }
-void setup() {
-  // Inicializa o Monitor Serial
-  Serial.begin(115200);
-  // Configura o dispositivo como uma estação Wi-Fi
-  WiFi.mode(WIFI_STA);
-  // Inicializa ESP-NOW
-  if (esp_now_init() != ESP_OK) {
-    Serial.println("Erro ao inicializar ESP-NOW");
+ 
+ 
+// =========================
+// RECEBER ESP-NOW
+// =========================
+ 
+void OnDataRecv(
+  const esp_now_recv_info_t *info,
+  const uint8_t *incomingData,
+  int len
+) {
+ 
+  if (len != sizeof(DataReceived)) {
+ 
+    Serial.print("Tamanho de pacote inesperado: ");
+    Serial.println(len);
+ 
     return;
   }
  
-  // Uma vez que o ESPNow é inicializado com sucesso, registramos para receber CB para
-  // obter informações do pacote recebido
-  esp_now_register_recv_cb(OnDataRecv);
+  memcpy(
+    &DataReceived,
+    incomingData,
+    sizeof(DataReceived)
+  );
+ 
+  memcpy(lidarAddress, info->src_addr, sizeof(lidarAddress));
+  lidarAddressKnown = true;
+ 
+  if (
+    verificacaoSolicitada != 0 &&
+    DataReceived.id == verificacaoSolicitada &&
+    DataReceived.verificacao == 1
+  ) {
+    Serial.print("VERIFICADO:");
+    Serial.print(DataReceived.id);
+    Serial.print(":");
+    Serial.println(DataReceived.grassHeight);
+    verificacaoSolicitada = 0;
+  }
+ 
+  lastReceiveTime = millis();
+ 
 }
  
-void loop() {
-  // Verifica se o tempo desde a última recepção de dados excede o tempo limite
-  if (millis() - lastReceiveTime > timeout) {
+ 
+// =========================
+// ENVIO ESP-NOW
+// =========================
+ 
+void OnDataSent(
+  const wifi_tx_info_t *info,
+  esp_now_send_status_t status
+) {
+ 
+  Serial.print("Status do envio: ");
+ 
+  if (status == ESP_NOW_SEND_SUCCESS) {
+    Serial.println("SUCESSO");
+  } else {
+    Serial.println("FALHA");
   }
-  Serial.println(myData.id);
-  Serial.println(myData.highWay);
-  Serial.println(myData.km);
-  Serial.println(myData.grassHeight);
-  delay(5000); // Ajuste conforme necessário
+}
+ 
+ 
+// =========================
+// SETUP
+// =========================
+ 
+void setup() {
+ 
+  Serial.begin(115200);
+ 
+  WiFi.mode(WIFI_STA);
+ 
+  Serial.print("MAC deste ESP32: ");
+  Serial.println(WiFi.macAddress());
+ 
+  if (esp_now_init() != ESP_OK) {
+ 
+    Serial.println("Erro ao inicializar ESP-NOW");
+ 
+    return;
+  }
+ 
+  addPeer();
+ 
+  esp_now_register_send_cb(OnDataSent);
+ 
+  esp_now_register_recv_cb(OnDataRecv);
+ 
+  Serial.println("ESP-NOW iniciado!");
+}
+ 
+ 
+// =========================
+// LOOP
+// =========================
+ 
+void loop() {
+ 
+  // -------------------------
+  // RECEBER COMANDO DO PYTHON
+  // -------------------------
+ 
+  if (Serial.available()) {
+ 
+    char mensagemRecebida[30];
+ 
+    int tamanho = Serial.readBytesUntil(
+      '\n',
+      mensagemRecebida,
+      sizeof(mensagemRecebida) - 1
+    );
+ 
+    mensagemRecebida[tamanho] = '\0';
+ 
+    // Remove \r caso venha \r\n
+    mensagemRecebida[strcspn(mensagemRecebida, "\r")] = '\0';
+ 
+    Serial.print("Recebida do Python: ");
+    Serial.println(mensagemRecebida);
+ 
+ 
+    // -------------------------
+    // VERIFICAR SENSOR
+    // -------------------------
+ 
+    if (strncmp(mensagemRecebida, "VERIFICAR:", 10) == 0) {
+ 
+      int idSensor = atoi(
+        &mensagemRecebida[10]
+      );
+ 
+      Serial.print("ID do sensor: ");
+      Serial.println(idSensor);
+ 
+ 
+      // Limpa a struct
+      memset(
+        &DataSent,
+        0,
+        sizeof(DataSent)
+      );
+ 
+ 
+      // Preenche comando
+      DataSent.id = idSensor;
+      DataSent.comando = 1;
+ 
+ 
+      if (!lidarAddressKnown) {
+        Serial.println("ERRO: nenhum pacote do LiDAR foi recebido ainda");
+        return;
+      }
+ 
+      verificacaoSolicitada = idSensor;
+ 
+      // Envia para o LiDAR que transmitiu o último pacote
+      esp_err_t resultado = esp_now_send(
+        lidarAddress,
+        (uint8_t *)&DataSent,
+        sizeof(DataSent)
+      );
+ 
+ 
+      if (resultado == ESP_OK) {
+        Serial.println("Comando enviado ao LiDAR via ESP-NOW");
+ 
+        Serial.println("Comando VERIFICAR enviado!");
+          Serial.println();
+          Serial.println("===== DADOS ENVIADOS =====");
+ 
+          Serial.print("ID: ");
+          Serial.println(DataSent.id);
+ 
+          Serial.print("COMANDO: ");
+          Serial.println(DataSent.comando);
+ 
+          Serial.println("===========================");
+ 
+      } else {
+ 
+        Serial.print(
+          "Erro ao enviar : "
+        );
+ 
+        Serial.println(resultado);
+      }
+    }
+  }
+ 
+ 
+  // -------------------------
+  // TIMEOUT
+  // -------------------------
+ 
+  if (
+    lastReceiveTime != 0 &&
+    millis() - lastReceiveTime > timeout
+  ) {}
+  Serial.println();
+  Serial.println("===== DADOS RECEBIDOS =====");
+ 
+  Serial.print("ID: ");
+  Serial.println(DataReceived.id);
+ 
+  Serial.print("Highway: ");
+  Serial.println(DataReceived.highWay);
+ 
+  Serial.print("KM: ");
+  Serial.println(DataReceived.km);
+ 
+  Serial.print("Grass Height: ");
+  Serial.println(DataReceived.grassHeight);
+ 
+  Serial.println("===========================");
+  delay(1000);
 }

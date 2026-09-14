@@ -254,7 +254,11 @@ def receber_dado_api():
 # SERIAL
 # ============================================================
 
+conexao_serial = None
+serial_lock = threading.Lock()
+
 def encontrar_porta():
+
 
     portas = list(list_ports.comports())
 
@@ -270,7 +274,9 @@ def encontrar_porta():
         print(f"  {porta.device} - {porta.description}")
 
     return portas[0].device
+
 def receber_dados():
+    global conexao_serial
 
     porta = encontrar_porta()
 
@@ -284,6 +290,8 @@ def receber_dados():
             BAUD_RATE,
             timeout=1
         )
+
+        conexao_serial = conexao
 
         print()
         print("================================")
@@ -451,6 +459,65 @@ def salvar_dado(novo_dado):
 
         return False
 
+# ============================================================
+# INICIAR VERIFICAÇÃO DE DADOS(ENVIAR COMANDOS AO ESP)
+# ============================================================
+
+def verificar(id_Sensor):
+
+    global conexao_serial
+
+    if conexao_serial is None or not conexao_serial.is_open:
+        print("ESP32 não conectado.")
+        return False
+
+    try:
+
+        mensagem =f"VERIFICAR:{id_Sensor}\n"
+
+        with serial_lock:
+            conexao_serial.write(mensagem.encode("utf-8"))
+
+        print(f"Comando de verificação enviado para o sensor {id_Sensor}.")
+
+        return True
+
+    except serial.SerialException as erro:
+        print("Erro ao enviar comando de verificação:", erro)
+        return False
+
+@app.route("/verificar", methods=["POST"])
+def solicitar_verificacao():
+    try:
+        data = request.get_json()
+
+        if not data or "id" not in data:
+            return jsonify({
+                "erro": "Campo 'id' ausente"
+            }), 400
+
+        id_sensor = data["id"]
+
+        sucesso = verificar(id_sensor)
+
+        if not sucesso:
+            return jsonify({
+                "erro": "ESP32 não conectado"
+            }), 503
+
+        return jsonify({
+            "Mensagem": "solicitação de verificação enviada com sucesso",
+            "Sensor_id": id_sensor
+        }), 200
+
+    except Exception as erro:
+        print("Erro ao solicitar verificação:", erro)
+
+        return jsonify({
+            "erro": str(erro)
+        }), 500
+
+    
 # ============================================================
 # INICIALIZAÇÃO
 # ============================================================

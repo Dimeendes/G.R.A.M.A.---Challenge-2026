@@ -99,11 +99,6 @@ export default function Home() {
             <Text style={styles.iconText}>Sensores</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.navButton} onPress={() => router.push('/OrdemServico')}>
-            <Ionicons name="document-outline" size={24} color="#000" />
-            <Text style={styles.iconText}>OS</Text>
-          </TouchableOpacity>
-
           <TouchableOpacity style={styles.navButton} onPress={() => router.push('/map')}>
             <Ionicons name="map-outline" size={24} color="#000" />
             <Text style={styles.iconText}>Mapa</Text>
@@ -116,9 +111,9 @@ export default function Home() {
             <Text style={styles.activeIconText}>Home</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.navButton} onPress={() => router.push('/alertas')}>
-            <Ionicons name="notifications-outline" size={24} color="#000" />
-            <Text style={styles.iconText}>Alertas</Text>
+          <TouchableOpacity style={styles.navButton} onPress={() => router.push('/OrdemServico')}>
+            <Ionicons name="document-outline" size={24} color="#000" />
+            <Text style={styles.iconText}>OS</Text>
           </TouchableOpacity>
 
           <TouchableOpacity

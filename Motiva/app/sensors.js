@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
   sortOptionText:     { color: '#333', fontSize: 15, fontWeight: '600' },
   sortCancelButton:   { backgroundColor: '#5E22F3', borderRadius: 10, padding: 13, alignItems: 'center', marginTop: 16 },
   sortCancelButtonText:{ color: '#fff', fontWeight: 'bold', fontSize: 15 },
-  card:                { backgroundColor: '#d0d0d0', borderRadius: 16, borderWidth: 1, borderColor: '#dfdfdf', padding: 16, marginBottom: 12 },
+  card:                { backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: '#dfdfdf', padding: 16, marginBottom: 12 },
   cardHeader:          { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   cardTitle:           { fontSize: 18, fontWeight: 'bold', color: '#333' },
   badge:               { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },

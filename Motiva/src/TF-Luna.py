@@ -9,6 +9,7 @@ from datetime import datetime
 import sqlite3
 import requests
 import os
+import time
 import queue
  
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -27,7 +28,6 @@ CORS(app)
 # ============================================================
  
 GOOGLE_ROUTES_API_KEY = os.getenv("GOOGLE_ROUTES_API_KEY")
- 
  
 @app.route("/rota", methods=["POST"])
 def calcular_rota():
@@ -312,6 +312,11 @@ def receber_dados():
                 .decode("utf-8", errors="ignore")
                 .strip()
             )
+            if linha:
+                print("=========")
+                print("SERIAL RECEBIDO")
+                print(repr(linha))
+                print("========")
  
             if not linha:
                 continue
@@ -330,10 +335,10 @@ def receber_dados():
  
                     try:
                         id_sensor = int(partes[1])
-                        altura = float(partes[2])
+                        grass_height = int(partes[2])
                         resultado = {
                             "sensor_id": id_sensor,
-                            "altura": altura
+                            "altura": grass_height
                         }
  
                         print("================================")
@@ -372,6 +377,13 @@ def receber_dados():
             )
  
             grass_height = (
+                conexao_serial
+                .readline()
+                .decode("utf-8", errors="ignore")
+                .strip()
+            )
+
+            verificacao = (
                 conexao_serial
                 .readline()
                 .decode("utf-8", errors="ignore")
@@ -463,90 +475,72 @@ def salvar_dado(novo_dado):
 # INICIAR VERIFICAÇÃO DE DADOS(ENVIAR COMANDOS AO ESP)
 # ============================================================
  
-def verificar(id_sensor, timeout=30):
-    global conexao_serial
+def verificar(id_sensor):
  
-    if conexao_serial is None:
-        print("ESP32 não conectado.")
-        return None
+    print("================================")
+    print("INICIANDO VERIFICAÇÃO")
+    print("Sensor solicitado:", id_sensor)
+    print("================================")
  
-    if not conexao_serial.is_open:
-        print("Porta serial está fechada.")
-        return None
+    comando = f"VERIFICAR:{id_sensor}\n"
+ 
+    print("COMANDO QUE SERÁ ENVIADO:")
+    print(repr(comando))
  
     try:
- 
-        mensagem = f"VERIFICAR:{int(id_sensor)}\n"
- 
-        print()
-        print("================================")
-        print("ENVIANDO VERIFICAÇÃO")
-        print("Sensor:", id_sensor)
-        print("Mensagem:", repr(mensagem))
-        print("Porta:", conexao_serial.port)
- 
         with serial_lock:
  
-            conexao_serial.write(
-                mensagem.encode("utf-8")
-            )
- 
-            conexao_serial.flush()
- 
-        print("Comando enviado com sucesso!")
-        print("Aguardando resposta do ESP32...")
- 
-        # ==================================================
-        # AGUARDA RESPOSTA
-        # ==================================================
- 
-        tempo_inicio = datetime.now()
- 
-        while True:
- 
-            tempo_decorrido = (
-                datetime.now() - tempo_inicio
-            ).total_seconds()
- 
-            if tempo_decorrido >= timeout:
-                print("Timeout aguardando verificação.")
+            if conexao_serial is None:
+                print("ERRO: conexao_serial é None")
                 return None
  
-            try:
+            print("PORTA SERIAL:", conexao_serial.port)
+            print("SERIAL ABERTA:", conexao_serial.is_open)
  
-                resultado = fila_verificacoes.get(
-                    timeout=1
-                )
+            conexao_serial.write(comando.encode("utf-8"))
+            conexao_serial.flush()
  
-                # Verifica se a resposta pertence ao sensor solicitado
-                if resultado["sensor_id"] == int(id_sensor):
+            print("COMANDO ENVIADO PARA O ESP32")
  
-                    print("================================")
-                    print("VERIFICAÇÃO RECEBIDA")
-                    print(resultado)
-                    print("================================")
- 
-                    return resultado
- 
-                # Se for de outro sensor, devolve para a fila
-                fila_verificacoes.put(resultado)
- 
-            except queue.Empty:
-                continue
- 
-    except serial.SerialException as erro:
- 
-        print("Erro ao enviar comando de verificação:")
-        print(erro)
- 
+    except Exception as erro:
+        print("ERRO AO ENVIAR COMANDO:")
+        print(type(erro).__name__)
+        print(str(erro))
         return None
+ 
+    print("AGUARDANDO RESPOSTA...")
+ 
+    inicio = time.time()
+ 
+    while time.time() - inicio < 10:
+ 
+        try:
+            resultado = fila_verificacoes.get(timeout=1)
+ 
+            print("RESPOSTA RECEBIDA NA FILA:")
+            print(resultado)
+ 
+            if resultado["sensor_id"] == int(id_sensor):
+                print("VERIFICAÇÃO CONFIRMADA!")
+                return resultado
+ 
+        except queue.Empty:
+            print("Ainda aguardando resposta...")
+ 
+    print("TIMEOUT!")
+    return None
  
 @app.route("/verificar", methods=["POST"])
 def solicitar_verificacao():
  
-    try:
+    print("================================")
+    print("ENTROU EM /verificar")
+    print("================================")
  
+    try:
         data = request.get_json()
+ 
+        print("JSON RECEBIDO:", data)
  
         if not data or "id" not in data:
             return jsonify({
@@ -555,15 +549,13 @@ def solicitar_verificacao():
  
         id_sensor = int(data["id"])
  
-        print("================================")
-        print("SOLICITAÇÃO HTTP DE VERIFICAÇÃO")
-        print("Sensor:", id_sensor)
-        print("================================")
+        print("ID DO SENSOR:", id_sensor)
  
         resultado = verificar(id_sensor)
  
-        if resultado is None:
+        print("RESULTADO DA FUNÇÃO verificar():", resultado)
  
+        if resultado is None:
             return jsonify({
                 "erro": "O sensor não respondeu dentro do tempo limite.",
                 "sensor_id": id_sensor
@@ -575,18 +567,17 @@ def solicitar_verificacao():
             "mensagem": "Nova medição realizada com sucesso."
         }), 200
  
-    except ValueError:
- 
-        return jsonify({
-            "erro": "O ID do sensor deve ser numérico"
-        }), 400
- 
     except Exception as erro:
  
-        print("Erro ao solicitar verificação:", erro)
+        print("================================")
+        print("ERRO DENTRO DE /verificar")
+        print("TIPO:", type(erro).__name__)
+        print("ERRO:", str(erro))
+        print("================================")
  
         return jsonify({
-            "erro": str(erro)
+            "erro": str(erro),
+            "tipo": type(erro).__name__
         }), 500
  
    

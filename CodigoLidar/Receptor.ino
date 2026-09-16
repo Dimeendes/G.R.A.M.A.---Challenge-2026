@@ -243,8 +243,7 @@ void loop() {
           Serial.print("ID: ");
           Serial.println(DataSent.id);
  
-          Serial.print("COMANDO: ");
-          Serial.println(DataSent.comando);
+       
  
           Serial.println("===========================");
  
@@ -271,18 +270,16 @@ void loop() {
   Serial.println();
   Serial.println("===== DADOS RECEBIDOS =====");
  
-  Serial.print("ID: ");
   Serial.println(DataReceived.id);
  
-  Serial.print("Highway: ");
   Serial.println(DataReceived.highWay);
  
-  Serial.print("KM: ");
   Serial.println(DataReceived.km);
  
-  Serial.print("Grass Height: ");
   Serial.println(DataReceived.grassHeight);
- 
+
+  Serial.println(DataReceived.verificacao);
+
   Serial.println("===========================");
   delay(1000);
 }

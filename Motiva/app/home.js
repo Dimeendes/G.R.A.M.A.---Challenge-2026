@@ -8,23 +8,12 @@ import { getHighwaysSummary } from './data/sensorsData';
 
 export default function Home() {
   const router = useRouter();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const { sensors } = useSensors();
-  const [selectedSensorId, setSelectedSensorId] = useState(null);
 
+  const nome = user?.username
   const highways = getHighwaysSummary(sensors);
   const totalAlerts = highways.reduce((acc, highway) => acc + highway.alerts, 0);
-
-  function closeModal() {
-    setIsModalVisible(false);
-    setSelectedSensorId(null);
-  }
-
-  function confirmCut() {
-    if (!selectedSensorId) return;
-    simulateCut(selectedSensorId);
-    closeModal();
-  }
 
   return (
     <View style={styles.container}>
@@ -34,6 +23,7 @@ export default function Home() {
         </View>
 
         <View style={styles.home}>
+          <Text style={styles.userMessage}>Olá, {nome}</Text>
           <Text style={styles.title}>Painel Geral</Text>
           <Text style={styles.subtitle}>Monitoramento rodoviário em tempo real</Text>
 
@@ -133,6 +123,7 @@ export default function Home() {
 }
 
 const styles = StyleSheet.create({
+  userMessage:           { fontWeight: 'bold', fontSize: 30, marginBottom: 10 },
   container:             { flex: 1, backgroundColor: '#f5f5f5' },
   scroll:                { flex: 1, backgroundColor: '#f5f5f5' },
   scrollContent:         { paddingBottom: 110 },
@@ -142,14 +133,14 @@ const styles = StyleSheet.create({
   title:                 { fontSize: 24, fontWeight: 'bold', color: '#333', marginBottom: 4 },
   subtitle:              { fontSize: 14, color: '#666', marginBottom: 6 },
   sourceText:            { fontSize: 12, color: '#5E22F3', fontWeight: '600', marginBottom: 16 },
-  summaryPanel:          { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: '#d0d0d0', borderRadius: 16, borderWidth: 1, borderColor: '#5E22F3', padding: 16, marginBottom: 16 },
+  summaryPanel:          { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: '#5E22F3', padding: 16, marginBottom: 16 },
   summaryItem:           { alignItems: 'center', flex: 1 },
   summaryNumber:         { fontSize: 22, fontWeight: 'bold', color: '#333', marginTop: 6 },
   summaryLabel:          { fontSize: 12, color: '#666', marginTop: 2 },
   cutButton:             { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#5E22F3', borderRadius: 16, paddingVertical: 14, marginBottom: 20 },
   cutButtonText:         { color: '#fff', fontSize: 16, fontWeight: 'bold' },
   sectionTitle:          { fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 12 },
-  card:                  { backgroundColor: '#d0d0d0', borderRadius: 16, borderWidth: 1, borderColor: '#5E22F3', padding: 16, marginBottom: 12 },
+  card:                  { backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: '#5E22F3', padding: 16, marginBottom: 12 },
   cardHeader:            { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   cardTitle:             { fontSize: 18, fontWeight: 'bold', color: '#333' },
   alertBadge:            { backgroundColor: '#EF4444', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },

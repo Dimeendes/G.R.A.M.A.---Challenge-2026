@@ -59,6 +59,16 @@ export function SensorsProvider({ children }) {
       clearInterval(intervalId);
     };
   }, []);
+
+  function atualizarSensor(id, grassHeight) {
+    setSensors((sensoresAtuais) =>
+      sensoresAtuais.map((sensor) =>
+        String(sensor.id) === String(id)
+          ? { ...sensor, grassHeight }
+          : sensor,
+      ),
+    );
+  }
  
   return (
 <SensorsContext.Provider
@@ -66,6 +76,7 @@ export function SensorsProvider({ children }) {
         sensors,
         isLoading,
         source,
+        atualizarSensor,
       }}
 >
       {children}

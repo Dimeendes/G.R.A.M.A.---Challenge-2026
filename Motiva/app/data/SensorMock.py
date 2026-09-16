@@ -72,7 +72,6 @@ Sensores = {
 }
 
 url = "http://127.0.0.1:5000/dados"
-
 while True:
     height = random.randint(2, 5)
     for sensor in Sensores.values():

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { StyleSheet, View, Text, TouchableOpacity, ActivityIndicator, TextInput } from "react-native";
-import { useRouter } from "expo-router";
+import { StyleSheet, View, Text, TouchableOpacity, ActivityIndicator, TextInput, Image } from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import MapView, {
   Marker,
   Polyline,
@@ -17,6 +17,7 @@ export default function Map() {
   const { sensors, isLoading } = useSensors();
   const { logout } = useAuth();
   const router = useRouter();
+  const { sensorId } = useLocalSearchParams();
  
   const [localizacaoUsuario, setLocalizacaoUsuario] = useState(null);
   const [sensorSelecionado, setSensorSelecionado] = useState(null);
@@ -30,6 +31,7 @@ export default function Map() {
   const [sensorIdBusca, setSensorIdBusca] = useState("");
   const [mensagemBusca, setMensagemBusca] = useState("");
   const mapRef = useRef(null);
+  const sensorParamProcessado = useRef(null);
  
   // ============================================================
   // PEGA A LOCALIZAÇÃO DO USUÁRIO
@@ -134,6 +136,34 @@ export default function Map() {
     focarNoSensor(sensor, marker);
   }
 
+  useEffect(() => {
+    const idDoSensor = Array.isArray(sensorId) ? sensorId[0] : sensorId;
+
+    if (
+      !idDoSensor ||
+      !sensors.length ||
+      sensorParamProcessado.current === idDoSensor
+    ) {
+      return;
+    }
+
+    const sensor = sensors.find(
+      (item) => String(item.id) === String(idDoSensor)
+    );
+    const marker = markers.find(
+      (item) => String(item.id) === String(idDoSensor)
+    );
+
+    if (!sensor || !marker) {
+      setMensagemBusca("Sensor não encontrado.");
+      sensorParamProcessado.current = idDoSensor;
+      return;
+    }
+
+    sensorParamProcessado.current = idDoSensor;
+    focarNoSensor(sensor, marker);
+  }, [sensorId, sensors]);
+
   const sensoresSugeridos = sensorIdBusca === ""
     ? []
     : markers
@@ -149,11 +179,6 @@ export default function Map() {
   // ============================================================
  
   async function calcularRota() {
-    if (!localizacaoUsuario) {
-      console.log("Localização do usuário ainda não disponível.");
-      return;
-    }
- 
     if (!sensorSelecionado) {
       console.log("Nenhum sensor selecionado.");
       return;
@@ -161,18 +186,36 @@ export default function Map() {
  
     try {
       setCalculandoRota(true);
+      const localizacaoAtual = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High,
+      });
+      const origem = {
+        latitude: localizacaoAtual.coords.latitude,
+        longitude: localizacaoAtual.coords.longitude,
+      };
+      setLocalizacaoUsuario(origem);
+      const destino = {
+        latitude: sensorSelecionado.latitude,
+        longitude: sensorSelecionado.longitude,
+      };
  
       const resultado = await buscarRota(
-        localizacaoUsuario,
-        {
-          latitude: sensorSelecionado.latitude,
-          longitude: sensorSelecionado.longitude,
-        }
+        origem,
+        destino,
       );
  
       setRota(resultado.coordenadas);
       setDistancia(resultado.distanciaKm);
       setDuracao(resultado.duracao);
+      mapRef.current?.animateToRegion(
+        {
+          ...origem,
+          latitudeDelta: 0.008,
+          longitudeDelta: 0.008,
+        },
+        800,
+      );
+      setSensorSelecionado(null);
  
     } catch (error) {
       console.error("Erro ao calcular rota:", error);
@@ -199,13 +242,7 @@ export default function Map() {
           keyboardType="number-pad"
           returnKeyType="search"
         />
-        <TouchableOpacity
-          style={styles.searchButton}
-          onPress={buscarSensorPorId}
-          accessibilityLabel="Buscar sensor"
-        >
-          <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
-        </TouchableOpacity>
+        <Image source={require('../assets/motiva-logo-roxa.png')} style={styles.logo}></Image>
       </View>
 
       {mensagemBusca !== "" && (
@@ -418,12 +455,8 @@ export default function Map() {
  
           <TouchableOpacity
             style={styles.closeButton}
-            onPress={() => {
-              setSensorSelecionado(null);
-              setRota([]);
-              setDistancia(null);
-              setDuracao(null);
-            }}>
+            onPress={() => setSensorSelecionado(null)}
+          >
  
             <Text style={styles.closeButtonText}>Fechar</Text>
  
@@ -437,12 +470,7 @@ export default function Map() {
                   <Ionicons name="radio-outline" size={24} color="#000" />
                   <Text style={styles.iconText}>Sensores</Text>
                 </TouchableOpacity>
-      
-                <TouchableOpacity style={styles.navButton} onPress={() => router.push('/map')}>
-                  <Ionicons name="map-outline" size={24} color="#000" />
-                  <Text style={styles.iconText}>Mapa</Text>
-                </TouchableOpacity>
-      
+
                 <TouchableOpacity style={styles.navButton}>
                   <View style={styles.activeIcon}>
                     <Ionicons name="map" size={24} color="#5E22F3" />
@@ -450,6 +478,11 @@ export default function Map() {
                   <Text style={styles.activeIconText}>Mapa</Text>
                 </TouchableOpacity>
       
+                <TouchableOpacity style={styles.navButton}>
+                    <Ionicons name="home-outline" size={24} color="#000" />
+                  <Text style={styles.iconText}>Home</Text>
+                </TouchableOpacity>
+
                 <TouchableOpacity style={styles.navButton} onPress={() => router.push('/OrdemServico')}>
                   <Ionicons name="document-outline" size={24} color="#000" />
                   <Text style={styles.iconText}>OS</Text>
@@ -517,6 +550,8 @@ function formatarDuracao(duration) {
 // ============================================================
  
 const styles = StyleSheet.create({
+
+ logo: { height: 40, width: 40, marginRight: 10 },
  
   container: {
     flex: 1,

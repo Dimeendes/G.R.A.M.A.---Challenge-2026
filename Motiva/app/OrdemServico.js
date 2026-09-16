@@ -28,6 +28,8 @@ export default function OrdemServico() {
   const [modalEquipe, setModalEquipe] = useState(false);
   const [modalSensor, setModalSensor] = useState(false);
   const [modalExclusao, setModalExclusao] = useState(false);
+  const [modalGramaAlta, setModalGramaAlta] = useState(false);
+  const [mensagemModalVerificacao, setMensagemModalVerificacao] = useState("");
   const [ordemParaExcluir, setOrdemParaExcluir] = useState(null);
   const [ordensServico, setOrdensServico] = useState([]);
   const [filtroOS, setFiltroOS] = useState("andamento");
@@ -36,7 +38,7 @@ export default function OrdemServico() {
   const [equipe, setEquipe] = useState("");
   const [sensorSelecionado, setSensorSelecionado] = useState(null);
   const [mensagemValidacao, setMensagemValidacao] = useState("");
-  const { sensors } = useSensors();
+  const { sensors, atualizarSensor } = useSensors();
   const sensorParamProcessado = useRef(null);
  
   useEffect(() => {
@@ -104,13 +106,11 @@ export default function OrdemServico() {
     return converterData(ordemA.dataLimite) - converterData(ordemB.dataLimite);
   });
  
-  const ordensExibidas = isFuncionario
-    ? ordensOrdenadas
-    : ordensOrdenadas.filter((ordem) =>
-        filtroOS === "concluidas"
-          ? ordem.status === "Concluída"
-          : ordem.status !== "Concluída",
-      );
+  const ordensExibidas = ordensOrdenadas.filter((ordem) =>
+    filtroOS === "concluidas"
+      ? ordem.status === "Concluída"
+      : ordem.status !== "Concluída",
+  );
  
   function limparFormulario() {
     setEquipe("");
@@ -121,6 +121,13 @@ export default function OrdemServico() {
   function deletarOrdemServico(id) {
     setOrdemParaExcluir(id);
     setModalExclusao(true);
+  }
+
+  function abrirSensorNoMapa(ordem) {
+    router.push({
+      pathname: "/map",
+      params: { sensorId: String(ordem.sensorId) },
+    });
   }
  
   function confirmarExclusao() {
@@ -136,56 +143,112 @@ export default function OrdemServico() {
   }
  
   async function concluirOrdemServico(id) {
-    const ordem = ordensServico.find((item) => item.id === id);
-    if (!ordem) return;
+  const ordem = ordensServico.find((item) => item.id === id);
  
-    const enderecoConfigurado = String(IPESP32 || "").replace(/\/$/, "");
-    const enderecoApi = /^https?:\/\//i.test(enderecoConfigurado)
-      ? enderecoConfigurado
-      : `http://${enderecoConfigurado}`;
-    const endpoint = /:\d+$/.test(enderecoApi)
-      ? `${enderecoApi}/verificar`
-      : `${enderecoApi}:5000/verificar`;
+  if (!ordem) {
+    console.log("ERRO: ordem não encontrada.");
+    return;
+  }
+ 
+  console.log("================================");
+  console.log("INICIANDO VERIFICAÇÃO");
+  console.log("ID da ordem:", id);
+  console.log("Sensor ID:", ordem.sensorId);
+  console.log("IPESP32:", IPESP32);
+ 
+  const enderecoConfigurado = String(IPESP32 || "").replace(/\/$/, "");
+ 
+  const enderecoApi = /^https?:\/\//i.test(enderecoConfigurado)
+    ? enderecoConfigurado
+    : `http://${enderecoConfigurado}`;
+ 
+  const endpoint = /:\d+$/.test(enderecoApi)
+    ? `${enderecoApi}/verificar`
+    : `${enderecoApi}:5000/verificar`;
+ 
+  console.log("Endpoint final:", endpoint);
+  console.log("================================");
+ 
+  try {
+    console.log("ANTES DO FETCH");
+console.log("Endpoint:", endpoint);
+ 
+const resposta = await fetch(endpoint, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    id: Number(ordem.sensorId),
+  }),
+});
+ 
+console.log("DEPOIS DO FETCH");
+console.log("Status:", resposta.status);
+ 
+const texto = await resposta.text();
+console.log("Resposta:", texto);
+ 
+    let resultado;
  
     try {
-      console.log("Chamando API de verificação:", endpoint);
-      const resposta = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: ordem.sensorId }),
-      });
-      const resultado = await resposta.json();
- 
-      if (!resposta.ok) {
-        throw new Error(resultado.erro || "A API recusou a verificação.");
-      }
- 
-      const alturaMedida = Number(resultado.altura);
-      if (!Number.isFinite(alturaMedida)) {
-        throw new Error("A API não retornou uma altura válida.");
-      }
- 
-      const ordensAtualizadas = ordensServico.map((ordemAtual) =>
-        ordemAtual.id === id
-          ? {
-              ...ordemAtual,
-              status: "Concluída",
-              alturaGrama: alturaMedida,
-              dataConclusao: formatarData(new Date()),
-            }
-          : ordemAtual,
-      );
- 
-      await salvarOrdens(ordensAtualizadas);
-      Alert.alert("Medição realizada", `Altura medida: ${alturaMedida} cm.`);
+      resultado = JSON.parse(texto);
     } catch (erro) {
-      console.error("Erro ao verificar o sensor:", erro);
-      Alert.alert(
-        "Erro de conexão",
-        erro.message || "Não foi possível acessar a API Python.",
+      console.log("Resposta não é JSON válido.");
+      throw new Error(
+        `A API retornou uma resposta inválida: ${texto}`
       );
     }
+ 
+    console.log("Resultado JSON:", resultado);
+ 
+    if (!resposta.ok) {
+      throw new Error(
+        resultado.erro || "A API recusou a verificação."
+      );
+    }
+ 
+    const alturaMedida = Number(resultado.altura);
+ 
+    console.log("Altura recebida:", alturaMedida);
+ 
+    if (!Number.isFinite(alturaMedida)) {
+      throw new Error("A API não retornou uma altura válida.");
+    }
+
+    atualizarSensor(ordem.sensorId, alturaMedida);
+
+    if (alturaMedida >= 10) {
+      setMensagemModalVerificacao(
+        `A medição foi de ${alturaMedida} cm. A grama está em alerta ou nível crítico, então a ordem continua em andamento.`,
+      );
+      setModalGramaAlta(true);
+      return;
+    }
+ 
+    const ordensAtualizadas = ordensServico.map((ordemAtual) =>
+      ordemAtual.id === id
+        ? {
+            ...ordemAtual,
+            status: "Concluída",
+            alturaGrama: alturaMedida,
+            dataConclusao: formatarData(new Date()),
+          }
+        : ordemAtual
+    );
+ 
+    await salvarOrdens(ordensAtualizadas);
+ 
+    console.log("Ordem salva com sucesso.");
+ 
+  } catch (erro) {
+    console.error("ERRO NA VERIFICAÇÃO:", erro);
+    setMensagemModalVerificacao(
+      erro.message || "Não foi possível acessar a API Python.",
+    );
+    setModalGramaAlta(true);
   }
+}
   function fecharModalOS() {
     setModalOS(false);
     setModalEquipe(false);
@@ -277,42 +340,40 @@ export default function OrdemServico() {
               </TouchableOpacity>
             )}
           </View>
-          {!isFuncionario && (
-            <View style={styles.filterContainer}>
-              <TouchableOpacity
+          <View style={styles.filterContainer}>
+            <TouchableOpacity
+              style={[
+                styles.filterButton,
+                filtroOS === "andamento" && styles.filterButtonActive,
+              ]}
+              onPress={() => setFiltroOS("andamento")}
+            >
+              <Text
                 style={[
-                  styles.filterButton,
-                  filtroOS === "andamento" && styles.filterButtonActive,
+                  styles.filterButtonText,
+                  filtroOS === "andamento" && styles.filterButtonTextActive,
                 ]}
-                onPress={() => setFiltroOS("andamento")}
               >
-                <Text
-                  style={[
-                    styles.filterButtonText,
-                    filtroOS === "andamento" && styles.filterButtonTextActive,
-                  ]}
-                >
-                  Em andamento
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
+                Em andamento
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.filterButton,
+                filtroOS === "concluidas" && styles.filterButtonActive,
+              ]}
+              onPress={() => setFiltroOS("concluidas")}
+            >
+              <Text
                 style={[
-                  styles.filterButton,
-                  filtroOS === "concluidas" && styles.filterButtonActive,
+                  styles.filterButtonText,
+                  filtroOS === "concluidas" && styles.filterButtonTextActive,
                 ]}
-                onPress={() => setFiltroOS("concluidas")}
               >
-                <Text
-                  style={[
-                    styles.filterButtonText,
-                    filtroOS === "concluidas" && styles.filterButtonTextActive,
-                  ]}
-                >
-                  Concluídas
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
+                Concluídas
+              </Text>
+            </TouchableOpacity>
+          </View>
           {notificacao && isFuncionario && (
             <TouchableOpacity
               style={styles.notification}
@@ -330,16 +391,12 @@ export default function OrdemServico() {
           {ordensExibidas.length === 0 ? (
             <View style={styles.emptyState}>
               <Text style={styles.emptyTitle}>
-                {isFuncionario
-                  ? "Nenhuma ordem de serviço"
-                  : filtroOS === "concluidas"
+                {filtroOS === "concluidas"
                   ? "Nenhuma ordem concluída"
                   : "Nenhuma ordem em andamento"}
               </Text>
               <Text style={styles.emptyText}>
-                {isFuncionario
-                  ? "Crie uma ordem para acompanhar as equipes e os trechos atendidos."
-                  : filtroOS === "concluidas"
+                {filtroOS === "concluidas"
                   ? "As ordens concluídas aparecerão aqui."
                   : "Crie uma ordem para acompanhar as equipes e os trechos atendidos."}
               </Text>
@@ -359,7 +416,6 @@ export default function OrdemServico() {
                 <View style={styles.orderCard} key={ordem.id}>
                   <View style={styles.orderHeader}>
                     <Text style={styles.orderTitle}>{ordem.equipe}</Text>
-                    <Text style={styles.orderStatus}>Criada</Text>
                     <Text
                       style={[
                         styles.orderStatus,
@@ -408,6 +464,13 @@ export default function OrdemServico() {
                       </TouchableOpacity>
                     )}
                   </View>
+                  <TouchableOpacity
+                    style={styles.mapButton}
+                    onPress={() => abrirSensorNoMapa(ordem)}
+                  >
+                    <Ionicons name="map-outline" size={19} color="#5E22F3" />
+                    <Text style={styles.mapButtonText}>Ver sensor no mapa</Text>
+                  </TouchableOpacity>
                   {ordem.dataConclusao && (
                     <Text style={styles.orderInfo}>
                       Concluída em: {ordem.dataConclusao}
@@ -615,6 +678,32 @@ export default function OrdemServico() {
         </View>
       </Modal>
  
+      <Modal
+        visible={modalGramaAlta}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setModalGramaAlta(false)}
+      >
+        <View style={styles.deleteModalOverlay}>
+          <View style={styles.deleteModalContent}>
+            <Ionicons name="warning-outline" size={32} color="#F59E0B" />
+            <Text style={styles.deleteModalTitle}>
+              Tarefa não concluída
+            </Text>
+            <Text style={styles.deleteModalText}>
+              {mensagemModalVerificacao ||
+                "A ordem continua em andamento."}
+            </Text>
+            <TouchableOpacity
+              style={styles.submitButton}
+              onPress={() => setModalGramaAlta(false)}
+            >
+              <Text style={styles.submitButtonText}>Entendi</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
       <Modal
         visible={modalExclusao}
         transparent
@@ -825,6 +914,18 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   completeButtonText: { color: "#fff", fontSize: 14, fontWeight: "bold" },
+  mapButton: {
+    borderWidth: 1,
+    borderColor: "#5E22F3",
+    borderRadius: 8,
+    padding: 11,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 7,
+    marginTop: 4,
+  },
+  mapButtonText: { color: "#5E22F3", fontSize: 14, fontWeight: "bold" },
   orderSensorStatusRow: {
     flexDirection: "row",
     alignItems: "center",

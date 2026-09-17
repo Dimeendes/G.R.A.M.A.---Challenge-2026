@@ -47,3 +47,7 @@
 - `python -m pip install requests`
 - `npm install`
 - Chave API da google de mapa e rota
+
+## COMANDO PARA INICIALIZAR O PROJETO
+
+`npm run dev`

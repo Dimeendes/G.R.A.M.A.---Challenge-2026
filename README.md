@@ -35,5 +35,15 @@
 
 - [x] Implementação dos sensores LiDAR
 - [x] Exibição dos dados reais no FrontEnd
-- [ ] Mapa interativo dos sensores 
-- [ ] Algoritmo preditivo de poda
+- [x] Mapa interativo dos sensores 
+- [x] Algoritmo preditivo de poda
+
+## INSTALANDO DEPENDENCIAS
+
+- `python -m pip install pandas`
+- `python -m pip install Flask`
+- `python -m pip install flask-cors`
+- `python -m pip install pyserial`
+- `python -m pip install requests`
+- `npm install`
+- Chave API da google de mapa e rota

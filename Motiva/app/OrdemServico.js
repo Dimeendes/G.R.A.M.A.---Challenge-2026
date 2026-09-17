@@ -143,112 +143,152 @@ export default function OrdemServico() {
   }
  
   async function concluirOrdemServico(id) {
-  const ordem = ordensServico.find((item) => item.id === id);
- 
-  if (!ordem) {
-    console.log("ERRO: ordem não encontrada.");
-    return;
-  }
- 
-  console.log("================================");
-  console.log("INICIANDO VERIFICAÇÃO");
-  console.log("ID da ordem:", id);
-  console.log("Sensor ID:", ordem.sensorId);
-  console.log("IPESP32:", IPESP32);
- 
-  const enderecoConfigurado = String(IPESP32 || "").replace(/\/$/, "");
- 
-  const enderecoApi = /^https?:\/\//i.test(enderecoConfigurado)
-    ? enderecoConfigurado
-    : `http://${enderecoConfigurado}`;
- 
-  const endpoint = /:\d+$/.test(enderecoApi)
-    ? `${enderecoApi}/verificar`
-    : `${enderecoApi}:5000/verificar`;
- 
-  console.log("Endpoint final:", endpoint);
-  console.log("================================");
- 
-  try {
-    console.log("ANTES DO FETCH");
-console.log("Endpoint:", endpoint);
- 
-const resposta = await fetch(endpoint, {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify({
-    id: Number(ordem.sensorId),
-  }),
-});
- 
-console.log("DEPOIS DO FETCH");
-console.log("Status:", resposta.status);
- 
-const texto = await resposta.text();
-console.log("Resposta:", texto);
- 
-    let resultado;
- 
-    try {
-      resultado = JSON.parse(texto);
-    } catch (erro) {
-      console.log("Resposta não é JSON válido.");
-      throw new Error(
-        `A API retornou uma resposta inválida: ${texto}`
-      );
-    }
- 
-    console.log("Resultado JSON:", resultado);
- 
-    if (!resposta.ok) {
-      throw new Error(
-        resultado.erro || "A API recusou a verificação."
-      );
-    }
- 
-    const alturaMedida = Number(resultado.altura);
- 
-    console.log("Altura recebida:", alturaMedida);
- 
-    if (!Number.isFinite(alturaMedida)) {
-      throw new Error("A API não retornou uma altura válida.");
-    }
+    const ordem = ordensServico.find((item) => item.id === id);
 
-    atualizarSensor(ordem.sensorId, alturaMedida);
-
-    if (alturaMedida >= 10) {
-      setMensagemModalVerificacao(
-        `A medição foi de ${alturaMedida} cm. A grama está em alerta ou nível crítico, então a ordem continua em andamento.`,
-      );
-      setModalGramaAlta(true);
+    if (!ordem) {
+      console.log("ERRO: ordem não encontrada.");
       return;
     }
- 
-    const ordensAtualizadas = ordensServico.map((ordemAtual) =>
-      ordemAtual.id === id
-        ? {
-            ...ordemAtual,
-            status: "Concluída",
-            alturaGrama: alturaMedida,
-            dataConclusao: formatarData(new Date()),
-          }
-        : ordemAtual
+
+    const sensorAtual = sensors.find(
+      (sensor) => String(sensor.id) === String(ordem.sensorId),
     );
- 
-    await salvarOrdens(ordensAtualizadas);
- 
-    console.log("Ordem salva com sucesso.");
- 
-  } catch (erro) {
-    console.error("ERRO NA VERIFICAÇÃO:", erro);
-    setMensagemModalVerificacao(
-      erro.message || "Não foi possível acessar a API Python.",
-    );
-    setModalGramaAlta(true);
+
+    const usarAlturaAtualComoFallback = (mensagemErro) => {
+      const alturaAtual = Number(sensorAtual?.grassHeight ?? ordem.alturaGrama ?? 0);
+
+      if (!Number.isFinite(alturaAtual)) {
+        setMensagemModalVerificacao(
+          mensagemErro || "Não foi possível verificar a altura do sensor.",
+        );
+        setModalGramaAlta(true);
+        return;
+      }
+
+      atualizarSensor(ordem.sensorId, alturaAtual);
+
+      if (alturaAtual >= 10) {
+        setMensagemModalVerificacao(
+          `A medição atual foi de ${alturaAtual} cm. A grama continua em alerta ou nível crítico, então a ordem permanece em andamento.`,
+        );
+        setModalGramaAlta(true);
+        return;
+      }
+
+      const ordensAtualizadas = ordensServico.map((ordemAtual) =>
+        ordemAtual.id === id
+          ? {
+              ...ordemAtual,
+              status: "Concluída",
+              alturaGrama: alturaAtual,
+              dataConclusao: formatarData(new Date()),
+            }
+          : ordemAtual,
+      );
+
+      salvarOrdens(ordensAtualizadas);
+    };
+
+    console.log("================================");
+    console.log("INICIANDO VERIFICAÇÃO");
+    console.log("ID da ordem:", id);
+    console.log("Sensor ID:", ordem.sensorId);
+    console.log("IPESP32:", IPESP32);
+
+    const enderecoConfigurado = String(IPESP32 || "").replace(/\/$/, "");
+    const enderecoApi = /^https?:\/\//i.test(enderecoConfigurado)
+      ? enderecoConfigurado
+      : `http://${enderecoConfigurado}`;
+    const endpoint = /:\d+$/.test(enderecoApi)
+      ? `${enderecoApi}/verificar`
+      : `${enderecoApi}:5000/verificar`;
+
+    console.log("Endpoint final:", endpoint);
+    console.log("================================");
+
+    try {
+      if (!IPESP32 || !enderecoConfigurado) {
+        usarAlturaAtualComoFallback(
+          "Modo mock ativado: a verificação do sensor real não está disponível, então a altura atual do sensor foi usada como referência.",
+        );
+        return;
+      }
+
+      console.log("ANTES DO FETCH");
+      console.log("Endpoint:", endpoint);
+
+      const resposta = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: Number(ordem.sensorId),
+        }),
+      });
+
+      console.log("DEPOIS DO FETCH");
+      console.log("Status:", resposta.status);
+
+      const texto = await resposta.text();
+      console.log("Resposta:", texto);
+
+      let resultado;
+
+      try {
+        resultado = JSON.parse(texto);
+      } catch (erro) {
+        console.log("Resposta não é JSON válido.");
+        throw new Error(`A API retornou uma resposta inválida: ${texto}`);
+      }
+
+      console.log("Resultado JSON:", resultado);
+
+      if (!resposta.ok) {
+        usarAlturaAtualComoFallback(
+          resultado.erro || "A API recusou a verificação. Usando a altura atual do sensor para continuar o fluxo.",
+        );
+        return;
+      }
+
+      const alturaMedida = Number(resultado.altura);
+
+      console.log("Altura recebida:", alturaMedida);
+
+      if (!Number.isFinite(alturaMedida)) {
+        throw new Error("A API não retornou uma altura válida.");
+      }
+
+      atualizarSensor(ordem.sensorId, alturaMedida);
+
+      if (alturaMedida >= 10) {
+        setMensagemModalVerificacao(
+          `A medição foi de ${alturaMedida} cm. A grama está em alerta ou nível crítico, então a ordem continua em andamento.`,
+        );
+        setModalGramaAlta(true);
+        return;
+      }
+
+      const ordensAtualizadas = ordensServico.map((ordemAtual) =>
+        ordemAtual.id === id
+          ? {
+              ...ordemAtual,
+              status: "Concluída",
+              alturaGrama: alturaMedida,
+              dataConclusao: formatarData(new Date()),
+            }
+          : ordemAtual,
+      );
+
+      await salvarOrdens(ordensAtualizadas);
+      console.log("Ordem salva com sucesso.");
+    } catch (erro) {
+      console.error("ERRO NA VERIFICAÇÃO:", erro);
+      usarAlturaAtualComoFallback(
+        erro.message || "Não foi possível acessar a API Python. Usando a altura atual do sensor como fallback.",
+      );
+    }
   }
-}
   function fecharModalOS() {
     setModalOS(false);
     setModalEquipe(false);

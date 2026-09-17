@@ -478,7 +478,7 @@ export default function Map() {
                   <Text style={styles.activeIconText}>Mapa</Text>
                 </TouchableOpacity>
       
-                <TouchableOpacity style={styles.navButton}>
+                <TouchableOpacity style={styles.navButton} onPress={() => router.push('/home')}>
                     <Ionicons name="home-outline" size={24} color="#000" />
                   <Text style={styles.iconText}>Home</Text>
                 </TouchableOpacity>

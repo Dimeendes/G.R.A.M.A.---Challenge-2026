@@ -1,6 +1,6 @@
 # G.R.A.M.A.---Challenge-2026
 
-## INTEGRANTES
+## INTEGRANTES 👥
 
 
 | Nome  | RM |
@@ -13,7 +13,7 @@
 | Gabriel Hiro Nakamura | 562221 |
 
 
-## DESCRIÇÃO
+## DESCRIÇÃO 📄
 
  A G.R.A.M.A. foi criada como uma solução para um problema enfrentado pela empresa Motiva: a imprecisão e dificuldade no controle do monitoramento da poda da vegetação presente nas margens das estradas.
   
@@ -28,17 +28,24 @@
     Página de monitoramento dos sensores, 
     Históricos de leituras, 
     Página de ordem de serviço que pode ser gerenciada pelos próprios gestores,
-    Mapa em tempo real com estado da altura da grama em diferentes trechos,
-    Página de alertas
+    Mapa em tempo real com estado da altura da grama em diferentes trechos
 
-## ROADMAP
+## ROADMAP 🗺️
 
 - [x] Implementação dos sensores LiDAR
 - [x] Exibição dos dados reais no FrontEnd
 - [x] Mapa interativo dos sensores 
 - [x] Algoritmo preditivo de poda
+- [ ] Implementar diferenciação maior entre as páginas de funcionário e gestor
 
-## INSTALANDO DEPENDENCIAS
+## Fluxo da solução 🔀
+
+- **Cenário testado:** vaso de grama para simulação de captação de dados
+- **Resultado esperado:** obter valor da altura de grama pelo menos 80% similar ao valor real
+- **Resultado obtido:** O resultado obtido foi de 93% similar ao dado real
+- **Status:** Passou
+
+## INSTALANDO DEPENDENCIAS 📦
 
 - `python -m pip install pandas`
 - `python -m pip install Flask`
@@ -48,6 +55,6 @@
 - `npm install`
 - Chave API da google de mapa e rota
 
-## COMANDO PARA INICIALIZAR O PROJETO
+## COMANDO PARA INICIALIZAR O PROJETO ▶️
 
 `npm run dev`

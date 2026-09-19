@@ -67,6 +67,10 @@
 | Sensores | Ordens de Serviço |
 | <img width="270" height="600" alt="sensores" src="https://github.com/user-attachments/assets/d4b4317e-a3e9-441e-9e18-76e104b03263" /> | <img width="270" height="600" alt="OS" src="https://github.com/user-attachments/assets/41fb160e-3110-4171-b7d3-ad65a9d8c318" /> |
 
+## Vídeo demonstrativo 🎥
+
+[Clique aqui para assistir o fluxo de funcionamento do app](https://www.youtube.com/shorts/finPHOKpQLI)
+
 
 
 

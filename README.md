@@ -58,3 +58,16 @@
 ## COMANDO PARA INICIALIZAR O PROJETO ▶️
 
 `npm run dev`
+
+## Telas do APP 📱
+
+| Login | Home | Mapa |
+|--|--|--|
+| <img width="270" height="600" alt="login" src="https://github.com/user-attachments/assets/65416333-b268-458b-a5a7-00e26197e380" /> | <img width="270" height="600" alt="home" src="https://github.com/user-attachments/assets/b5c99d81-3eaa-44a5-b6ee-894092da735e" /> | <img width="270" height="600" alt="mapa" src="https://github.com/user-attachments/assets/9a11eaf2-d5c0-4cc2-bd7f-af5dd1f27c98" /> |
+| Sensores | Ordens de Serviço |
+| <img width="270" height="600" alt="sensores" src="https://github.com/user-attachments/assets/d4b4317e-a3e9-441e-9e18-76e104b03263" /> | <img width="270" height="600" alt="OS" src="https://github.com/user-attachments/assets/41fb160e-3110-4171-b7d3-ad65a9d8c318" /> |
+
+
+
+
+

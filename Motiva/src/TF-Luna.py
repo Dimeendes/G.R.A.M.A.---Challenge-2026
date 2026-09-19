@@ -509,27 +509,26 @@ def verificar(id_sensor):
         return None
  
     print("AGUARDANDO RESPOSTA...")
- 
+
     inicio = time.time()
- 
-    while time.time() - inicio < 10:
- 
+
+    while time.time() - inicio < 1.5:
         try:
-            resultado = fila_verificacoes.get(timeout=1)
- 
+            resultado = fila_verificacoes.get(timeout=0.3)
+
             print("RESPOSTA RECEBIDA NA FILA:")
             print(resultado)
- 
+
             if resultado["sensor_id"] == int(id_sensor):
                 print("VERIFICAÇÃO CONFIRMADA!")
                 return resultado
- 
+
         except queue.Empty:
             print("Ainda aguardando resposta...")
- 
+
     print("TIMEOUT!")
     return None
- 
+
 @app.route("/verificar", methods=["POST"])
 def solicitar_verificacao():
  

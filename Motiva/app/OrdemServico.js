@@ -18,6 +18,7 @@ import { getGrassHeightStatus } from "./data/sensorsData";
 import Constants from "expo-constants";
  
 const { IPESP32 } = Constants.expoConfig?.extra || {};
+const VERIFICACAO_TIMEOUT_MS = 1500;
  
 export default function OrdemServico() {
   const router = useRouter();
@@ -155,7 +156,12 @@ export default function OrdemServico() {
     );
 
     const usarAlturaAtualComoFallback = (mensagemErro) => {
-      const alturaAtual = Number(sensorAtual?.grassHeight ?? ordem.alturaGrama ?? 0);
+      const sensorMaisRecente = sensors.find(
+        (item) => String(item.id) === String(ordem.sensorId),
+      );
+      const alturaAtual = Number(
+        sensorMaisRecente?.grassHeight ?? ordem.alturaGrama ?? 0,
+      );
 
       if (!Number.isFinite(alturaAtual)) {
         setMensagemModalVerificacao(
@@ -217,15 +223,20 @@ export default function OrdemServico() {
       console.log("ANTES DO FETCH");
       console.log("Endpoint:", endpoint);
 
-      const resposta = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          id: Number(ordem.sensorId),
+      const resposta = await Promise.race([
+        fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            id: Number(ordem.sensorId),
+          }),
         }),
-      });
+        new Promise((_, reject) => {
+          setTimeout(() => reject(new Error("VERIFICACAO_TIMEOUT")), VERIFICACAO_TIMEOUT_MS);
+        }),
+      ]);
 
       console.log("DEPOIS DO FETCH");
       console.log("Status:", resposta.status);
@@ -283,6 +294,18 @@ export default function OrdemServico() {
       await salvarOrdens(ordensAtualizadas);
       console.log("Ordem salva com sucesso.");
     } catch (erro) {
+      const isTimeoutLikeError =
+        erro?.message === "VERIFICACAO_TIMEOUT" ||
+        erro?.name === "AbortError";
+
+      if (isTimeoutLikeError) {
+        console.warn("Verificação demorou, usando a altura atual do sensor como referência.");
+        usarAlturaAtualComoFallback(
+          "A verificação demorou, então a altura atual do sensor foi usada como referência para continuar.",
+        );
+        return;
+      }
+
       console.error("ERRO NA VERIFICAÇÃO:", erro);
       usarAlturaAtualComoFallback(
         erro.message || "Não foi possível acessar a API Python. Usando a altura atual do sensor como fallback.",

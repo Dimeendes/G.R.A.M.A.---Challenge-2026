@@ -19,7 +19,7 @@ export default {
           apiKey: process.env.GOOGLE_MAPS_API_KEY,
         },
         googleRoutes: {
-          apiKey: process.env.GOOGLE_ROUTES_API_KEY,
+          apiKey: process.env.EXPO_PUBLIC_GOOGLE_ROUTES_API_KEY,
         }
       }
     }

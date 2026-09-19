@@ -1,22 +1,27 @@
 import polyline from "@mapbox/polyline";
- 
+
 const GOOGLE_ROUTES_API_KEY =
-  process.env.EXPO_PUBLIC_GOOGLE_ROUTES_API_KEY;
- 
+  process.env.EXPO_PUBLIC_GOOGLE_ROUTES_API_KEY ||
+  process.env.GOOGLE_ROUTES_API_KEY;
+
 export async function buscarRota(origem, destino) {
   try {
     if (!origem || !destino) {
       throw new Error("Origem ou destino não informado.");
     }
-    console.log(
-  "ROUTES API KEY:",
-  GOOGLE_ROUTES_API_KEY
-);
+
+    if (!GOOGLE_ROUTES_API_KEY) {
+      throw new Error(
+        "Chave da Google Routes API ausente. Defina EXPO_PUBLIC_GOOGLE_ROUTES_API_KEY no .env."
+      );
+    }
+
+    console.log("ROUTES API KEY:", GOOGLE_ROUTES_API_KEY);
     const response = await fetch(
       "https://routes.googleapis.com/directions/v2:computeRoutes",
       {
         method: "POST",
- 
+
         headers: {
           "Content-Type": "application/json",
           "X-Goog-Api-Key": GOOGLE_ROUTES_API_KEY,

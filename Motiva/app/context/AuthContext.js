@@ -1,8 +1,5 @@
 import { createContext, useState, useContext, useEffect } from "react";
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Constants from 'expo-constants';
-
-const { admUser, admPassword, funcionarioUser, funcionarioPassword } = Constants.expoConfig.extra;
 
 const AuthContext = createContext();
 
@@ -10,13 +7,13 @@ export function AuthProvider({ children }) {
     const [user, setUser] = useState(null);
     const [users, setUsers] = useState([
         {
-            username: admUser,
-            password: admPassword,
+            username: 'thiagoalvarenga',
+            password: '562695',
             role: 'gerente'
         },
         {
-            username: funcionarioUser,
-            password: funcionarioPassword,
+            username: 'israelkaracsony',
+            password: '563435',
             role: 'funcionario'
 
         },

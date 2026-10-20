@@ -72,9 +72,9 @@ Sensores = {
 }
 
 url = "http://127.0.0.1:5000/dados"
-while True:
-    height = random.randint(2, 5)
-    for sensor in Sensores.values():
+
+height = random.randint(2, 5)
+for sensor in Sensores.values():
 
                 if sensor['grassHeight'] >= 30:
                     sensor['grassHeight'] = 9
@@ -103,4 +103,4 @@ while True:
                         )
                 except requests.exceptions.RequestException as erro:
                     print(f"Erro ao enviar sensor {sensor['id']}: {erro}")
-    time.sleep(5)
+time.sleep(5)

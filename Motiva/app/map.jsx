@@ -1,5 +1,14 @@
 import { useEffect, useRef, useState } from "react";
-import { StyleSheet, View, Text, TouchableOpacity, ActivityIndicator, TextInput, Image } from "react-native";
+import {
+  StyleSheet,
+  View,
+  Text,
+  TouchableOpacity,
+  ActivityIndicator,
+  TextInput,
+  Image,
+  ImageBackground,
+} from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import MapView, {
   Marker,
@@ -12,6 +21,21 @@ import { useSensors } from "./context/SensorsContext";
 import { useAuth } from "./context/AuthContext";
 import markers from "./data/marker";
 import { buscarRota } from "../services/rotas";
+
+const MOCK_MARKER_POSITIONS = [
+  { left: 55, top: 15 },
+  { left: 58, top: 21 },
+  { left: 59, top: 27 },
+  { left: 57, top: 33 },
+  { left: 53, top: 39 },
+  { left: 49, top: 45 },
+  { left: 45, top: 51 },
+  { left: 42, top: 57 },
+  { left: 40, top: 63 },
+  { left: 40, top: 69 },
+  { left: 41, top: 75 },
+  { left: 42, top: 81 },
+];
  
 export default function Map() {
   const { sensors, isLoading } = useSensors();
@@ -28,9 +52,12 @@ export default function Map() {
  
   const [carregandoLocalizacao, setCarregandoLocalizacao] = useState(true);
   const [calculandoRota, setCalculandoRota] = useState(false);
+  const [usarMapaMockado, setUsarMapaMockado] = useState(false);
+  const [mensagemMapa, setMensagemMapa] = useState("");
   const [sensorIdBusca, setSensorIdBusca] = useState("");
   const [mensagemBusca, setMensagemBusca] = useState("");
   const mapRef = useRef(null);
+  const mapLoadTimeoutRef = useRef(null);
   const sensorParamProcessado = useRef(null);
  
   // ============================================================
@@ -69,6 +96,19 @@ export default function Map() {
  
     obterLocalizacao();
   }, []);
+
+  useEffect(() => {
+    if (usarMapaMockado) {
+      return undefined;
+    }
+
+    mapLoadTimeoutRef.current = setTimeout(() => {
+      setUsarMapaMockado(true);
+      setMensagemMapa("Mapa indisponível. Exibindo mapa demonstrativo.");
+    }, 10000);
+
+    return () => clearTimeout(mapLoadTimeoutRef.current);
+  }, [usarMapaMockado]);
  
   // ============================================================
   // COR DO MARCADOR
@@ -199,10 +239,17 @@ export default function Map() {
         longitude: sensorSelecionado.longitude,
       };
  
-      const resultado = await buscarRota(
-        origem,
-        destino,
-      );
+      let resultado;
+      try {
+        resultado = await buscarRota(origem, destino);
+      } catch (error) {
+        console.error("Erro ao calcular rota:", error);
+        setUsarMapaMockado(true);
+        setMensagemMapa(
+          "A API de rotas está indisponível. Exibindo mapa demonstrativo."
+        );
+        return;
+      }
  
       setRota(resultado.coordenadas);
       setDistancia(resultado.distanciaKm);
@@ -218,7 +265,7 @@ export default function Map() {
       setSensorSelecionado(null);
  
     } catch (error) {
-      console.error("Erro ao calcular rota:", error);
+      console.error("Erro ao obter localização para calcular rota:", error);
     } finally {
       setCalculandoRota(false);
     }
@@ -266,90 +313,116 @@ export default function Map() {
         </View>
       )}
  
-      <MapView
-        ref={mapRef}
-        provider={PROVIDER_GOOGLE}
-        style={styles.map}
- 
-        initialRegion={{
-          latitude: -23.5350,
-          longitude: -46.7848,
-          latitudeDelta: 0.15,
-          longitudeDelta: 0.15,
-        }}
- 
-        showsUserLocation={true}
-        showsMyLocationButton={true}
->
- 
-        {/* ================================================== */}
-        {/* MARCADORES DOS SENSORES */}
-        {/* ================================================== */}
- 
-        {markers.map((marker) => {
- 
-          // Procura os dados desse sensor na API/context
-          const sensor = sensors.find(
-            (item) =>
-              Number(item.id) === Number(marker.id)
-          );
- 
-          // Se ainda não recebeu os dados, não mostra marcador
-          if (!sensor) {
-            return null;
-          }
- 
-          const markerColor =
-            getMarkerColor(sensor.grassHeight);
- 
-          return (
-<Marker
-              key={marker.id}
- 
-              coordinate={{
-                latitude: marker.latitude,
-                longitude: marker.longitude,
-              }}
- 
-              title={marker.nome}
- 
-              description={`${sensor.grassHeight} cm de vegetação`}
- 
-              onPress={() =>
-                selecionarSensor(sensor, marker)
+      {usarMapaMockado ? (
+        <View style={styles.map}>
+          <ImageBackground
+            source={require("../assets/map_mock.jpg")}
+            style={styles.map}
+            resizeMode="stretch"
+          >
+            {markers.map((marker, index) => {
+              const sensor = sensors.find(
+                (item) => Number(item.id) === Number(marker.id)
+              );
+
+              if (!sensor) {
+                return null;
               }
->
- 
-              <View
-                style={[
-                  styles.marker,
-                  {
-                    backgroundColor: markerColor,
-                  },
-                ]}
->
-<Text style={styles.markerText}>
-                  {marker.id}
-</Text>
-</View>
- 
-            </Marker>
-          );
-        })}
- 
-        {/* ================================================== */}
-        {/* ROTA */}
-        {/* ================================================== */}
- 
-        {rota.length > 0 && (
-<Polyline
-            coordinates={rota}
-            strokeWidth={5}
-            strokeColor="#2563EB"
-          />
-        )}
- 
-      </MapView>
+
+              const position =
+                MOCK_MARKER_POSITIONS[index] ||
+                MOCK_MARKER_POSITIONS[MOCK_MARKER_POSITIONS.length - 1];
+
+              return (
+                <TouchableOpacity
+                  key={marker.id}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Sensor ${marker.id}`}
+                  style={[
+                    styles.mockMarkerPosition,
+                    {
+                      left: `${position.left}%`,
+                      top: `${position.top}%`,
+                    },
+                  ]}
+                  onPress={() => selecionarSensor(sensor, marker)}
+                >
+                  <View
+                    style={[
+                      styles.marker,
+                      { backgroundColor: getMarkerColor(sensor.grassHeight) },
+                    ]}
+                  >
+                    <Text style={styles.markerText}>{marker.id}</Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </ImageBackground>
+        </View>
+      ) : (
+        <MapView
+          ref={mapRef}
+          provider={PROVIDER_GOOGLE}
+          style={styles.map}
+          initialRegion={{
+            latitude: -23.5350,
+            longitude: -46.7848,
+            latitudeDelta: 0.15,
+            longitudeDelta: 0.15,
+          }}
+          showsUserLocation={true}
+          showsMyLocationButton={true}
+          onMapLoaded={() => {
+            clearTimeout(mapLoadTimeoutRef.current);
+            mapLoadTimeoutRef.current = null;
+          }}
+        >
+          {markers.map((marker) => {
+            const sensor = sensors.find(
+              (item) => Number(item.id) === Number(marker.id)
+            );
+
+            if (!sensor) {
+              return null;
+            }
+
+            return (
+              <Marker
+                key={marker.id}
+                coordinate={{
+                  latitude: marker.latitude,
+                  longitude: marker.longitude,
+                }}
+                title={marker.nome}
+                description={`${sensor.grassHeight} cm de vegetação`}
+                onPress={() => selecionarSensor(sensor, marker)}
+              >
+                <View
+                  style={[
+                    styles.marker,
+                    { backgroundColor: getMarkerColor(sensor.grassHeight) },
+                  ]}
+                >
+                  <Text style={styles.markerText}>{marker.id}</Text>
+                </View>
+              </Marker>
+            );
+          })}
+
+          {rota.length > 0 && (
+            <Polyline
+              coordinates={rota}
+              strokeWidth={5}
+              strokeColor="#2563EB"
+            />
+          )}
+        </MapView>
+      )}
+
+      {mensagemMapa !== "" && (
+        <Text style={styles.mapFallbackMessage}>{mensagemMapa}</Text>
+      )}
  
       {/* ==================================================== */}
       {/* CARREGANDO SENSORES */}
@@ -395,7 +468,7 @@ export default function Map() {
  
           <Text style={styles.sensorInfo}>
             Rodovia:{" "}
-            {sensorSelecionado.highWay}
+            {sensorSelecionado.highWay ?? sensorSelecionado.highway}
 </Text>
  
           <Text style={styles.sensorInfo}>
@@ -612,6 +685,22 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
 
+  mapFallbackMessage: {
+    position: "absolute",
+    top: 82,
+    left: 16,
+    right: 16,
+    zIndex: 4,
+    elevation: 4,
+    backgroundColor: "#FFFFFFE6",
+    color: "#4B5563",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    fontSize: 13,
+    textAlign: "center",
+  },
+
   suggestionsContainer: {
     position: "absolute",
     top: 78,
@@ -659,6 +748,14 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 14,
     fontWeight: "bold",
+  },
+
+  mockMarkerPosition: {
+    position: "absolute",
+    width: 42,
+    height: 42,
+    marginLeft: -21,
+    marginTop: -21,
   },
  
   // ==========================================================

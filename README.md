@@ -36,7 +36,7 @@
 - [x] Exibição dos dados reais no FrontEnd
 - [x] Mapa interativo dos sensores 
 - [x] Algoritmo preditivo de poda
-- [ ] Implementar diferenciação maior entre as páginas de funcionário e gestor
+- [x] Implementar diferenciação maior entre as páginas de funcionário e gestor
 
 ## Fluxo da solução 🔀
 

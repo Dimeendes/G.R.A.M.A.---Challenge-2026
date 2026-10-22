@@ -8,9 +8,13 @@ export default {
     orientation: "portrait",
     extra: {
       IPESP32: process.env.EXPO_PUBLIC_ESP32_URL,
+      eas: {
+        projectId: "3af4b60d-4809-4496-a178-bb73c5da08c9",
+      },
     },
     android: {
-        config: {
+      package: "com.motiva.grama2026",
+      config: {
         googleMaps: {
           apiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY,
         },

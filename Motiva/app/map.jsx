@@ -6,7 +6,7 @@ import * as Location from "expo-location";
 import { Ionicons } from '@expo/vector-icons';
 import { useSensors } from "../context/SensorsContext";
 import { useAuth } from "../context/AuthContext";
-import markers from "../datamocks/marker";
+import markers from "../data/marker";
 import { buscarRota } from "../services/rotas";
 
 const MOCK_MARKER_POSITIONS = [

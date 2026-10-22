@@ -40,9 +40,29 @@
 
 ## Fluxo da solução 🔀
 
-- **Cenário testado:** vaso de grama para simulação de captação de dados
+**Cenário 1:** vaso de grama para simulação de captação de dados
 - **Resultado esperado:** obter valor da altura de grama pelo menos 80% similar ao valor real
 - **Resultado obtido:** O resultado obtido foi de 93% similar ao dado real
+- **Status:** Passou 
+
+**Cenário 2:** envio das medições dos sensores para a API
+- **Resultado esperado:** enviar os dados de identificação, rodovia, quilômetro e altura da grama para a API e receber confirmação de salvamento
+- **Resultado obtido:** medições são enviadas com sucesso
+- **Status:** Passou
+
+**Cenário 3:** consulta das medições mais recentes na página de sensores
+- **Resultado esperado:** exibir os sensores cadastrados com suas respectivas rodovias, quilômetros, alturas e estados de alerta
+- **Resultado obtido:** consulta de medições mais recentes realizada com sucesso
+- **Status:** Passou
+
+**Cenário 4:** visualização dos sensores no mapa
+- **Resultado esperado:** apresentar os sensores em suas localizações e indicar visualmente a condição da vegetação em cada trecho
+- **Resultado obtido:** visualização realizada com sucesso
+- **Status:** Passou
+
+**Cenário 5:** criação e acompanhamento de uma ordem de serviço
+- **Resultado esperado:** permitir que o gestor crie uma ordem para um trecho que precisa de poda e que a equipe consulte as informações da ordem
+- **Resultado obtido:** criação e acompanhamento de OS realizadas com sucesso
 - **Status:** Passou
 
 ## INSTALANDO DEPENDENCIAS 📦
@@ -70,7 +90,6 @@
 ## Vídeo demonstrativo 🎥
 
 [Clique aqui para assistir o fluxo de funcionamento do app](https://www.youtube.com/shorts/finPHOKpQLI)
-
 
 
 

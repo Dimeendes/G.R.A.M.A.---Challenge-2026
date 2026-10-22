@@ -3,7 +3,7 @@
 # ==========================
 def executar_algoritmo():
     import pandas as pd
-    from app.database.database import buscar_medicoes, atualizar_previsao
+    from database.database import buscar_medicoes, atualizar_previsao
 
     dados = buscar_medicoes()
     if not dados:

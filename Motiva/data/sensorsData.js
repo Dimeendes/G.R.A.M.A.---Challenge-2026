@@ -3,6 +3,9 @@ export const WARNING_HEIGHT = 10;
 
 import { useEffect, useState } from "react";
 import { FlatList, Text, View } from "react-native";
+import Constants from 'expo-constants';
+
+const { IPESP32 } = Constants.expoConfig.extra;
 
 export default function App() {
   const [sensoresAPI, setSensoresAPI] = useState([]);
@@ -13,7 +16,7 @@ export default function App() {
     async function carregarDados() {
       try {
         const resposta = await fetch(
-          "http://10.123.33.196:5000/dados"
+          `http://${IPESP32}:5000/dados`
         );
 
         if (!resposta.ok) {

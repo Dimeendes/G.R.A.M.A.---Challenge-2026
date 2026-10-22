@@ -36,6 +36,7 @@
 - [x] Exibição dos dados reais no FrontEnd
 - [x] Mapa interativo dos sensores 
 - [x] Algoritmo preditivo de poda
+- [x] Criação e gestão de ordens de serviço 
 - [x] Implementar diferenciação maior entre as páginas de funcionário e gestor
 
 ## Fluxo da solução 🔀

@@ -6,7 +6,8 @@ import { FlatList, Text, View } from "react-native";
 
 export default function App() {
   const [sensoresAPI, setSensoresAPI] = useState([]);
-  //const [dados, setDados] = useState(initialSensors);
+  const [carregando, setCarregando] = useState(true);
+  const [erroBusca, setErroBusca] = useState(null);
 
   useEffect(() => {
     async function carregarDados() {
@@ -15,28 +16,41 @@ export default function App() {
           "http://10.123.33.196:5000/dados"
         );
 
+        if (!resposta.ok) {
+          throw new Error(`A API respondeu com status ${resposta.status}`);
+        }
+
         const resultado = await resposta.json();
 
         setSensoresAPI(resultado)
 
-        
       } catch (erro) {
         console.error("Erro ao buscar dados:", erro);
+        setErroBusca(
+          erro instanceof Error ? erro.message : String(erro)
+        );
+      } finally {
+        setCarregando(false);
       }
     }
 
     carregarDados();
   }, []);
 
-  const sensores = [
-    ...initialSensors,
-    ...sensoresAPI
-  ]
+  const sensores = sensoresAPI;
 
-  if (!dados) {
+  if (carregando) {
     return (
       <View>
         <Text>Carregando dados...</Text>
+      </View>
+    );
+  }
+
+  if (erroBusca) {
+    return (
+      <View>
+        <Text>Erro ao carregar dados: {erroBusca}</Text>
       </View>
     );
   }

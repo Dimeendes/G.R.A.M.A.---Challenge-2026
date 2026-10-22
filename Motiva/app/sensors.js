@@ -1,15 +1,14 @@
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useAuth } from './context/AuthContext';
+import { useAuth } from '../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
-import { CRITICAL_HEIGHT, getGrassHeightStatus } from './data/sensorsData';
-import { useSensors } from './context/SensorsContext';
+import { getGrassHeightStatus } from '../data/sensorsData';
+import { useSensors } from '../context/SensorsContext';
 
 export default function Sensors() {
   const { user, logout } = useAuth();
   const router = useRouter();
-  const isGerente = user?.role === "gerente";
   const isFuncionario = user?.role === "funcionario";
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedSensor, setSelectedSensor] = useState(null);

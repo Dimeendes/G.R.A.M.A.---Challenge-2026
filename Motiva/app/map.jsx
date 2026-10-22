@@ -1,25 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import {
-  StyleSheet,
-  View,
-  Text,
-  TouchableOpacity,
-  ActivityIndicator,
-  TextInput,
-  Image,
-  ImageBackground,
-} from "react-native";
+import { StyleSheet, View, Text, TouchableOpacity, ActivityIndicator, TextInput, Image, ImageBackground } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import MapView, {
-  Marker,
-  Polyline,
-  PROVIDER_GOOGLE,
-} from "react-native-maps";
+import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from "react-native-maps";
 import * as Location from "expo-location";
 import { Ionicons } from '@expo/vector-icons';
-import { useSensors } from "./context/SensorsContext";
-import { useAuth } from "./context/AuthContext";
-import markers from "./data/marker";
+import { useSensors } from "../context/SensorsContext";
+import { useAuth } from "../context/AuthContext";
+import markers from "../datamocks/marker";
 import { buscarRota } from "../services/rotas";
 
 const MOCK_MARKER_POSITIONS = [

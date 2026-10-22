@@ -1,10 +1,9 @@
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Modal, Pressable } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { useAuth } from './context/AuthContext';
-import { useSensors } from './context/SensorsContext';
+import { useAuth } from '../context/AuthContext';
+import { useSensors } from '../context/SensorsContext';
 import { Ionicons } from '@expo/vector-icons';
-import { getHighwaysSummary } from './data/sensorsData';
+import { getHighwaysSummary } from '../data/sensorsData';
 
 export default function Home() {
   const router = useRouter();

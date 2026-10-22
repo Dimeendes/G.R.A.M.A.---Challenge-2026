@@ -1,7 +1,7 @@
 import { View, Text, TouchableOpacity, StyleSheet, Image, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { useAuth } from './context/AuthContext';
+import { useAuth } from '../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 
 

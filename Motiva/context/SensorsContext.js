@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { fetchEsp32Sensors } from '../../services/esp32Service';
+import { fetchEsp32Sensors } from '../services/esp32Service';
  
 const SensorsContext = createContext();
  

@@ -1,20 +1,11 @@
-import {
-  Alert,
-  Image,
-  Modal,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Alert, Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useEffect, useRef, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useAuth } from "./context/AuthContext";
-import { useSensors } from "./context/SensorsContext";
-import { getGrassHeightStatus } from "./data/sensorsData";
+import { useAuth } from "../context/AuthContext";
+import { useSensors } from "../context/SensorsContext";
+import { getGrassHeightStatus } from "../data/sensorsData";
 import Constants from "expo-constants";
  
 const { IPESP32 } = Constants.expoConfig?.extra || {};

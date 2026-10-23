@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import { getGrassHeightStatus } from '../data/sensorsData';
@@ -9,12 +9,38 @@ import { useSensors } from '../context/SensorsContext';
 export default function Sensors() {
   const { user, logout } = useAuth();
   const router = useRouter();
+  const { sensorId } = useLocalSearchParams();
   const isFuncionario = user?.role === "funcionario";
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedSensor, setSelectedSensor] = useState(null);
   const { sensors } = useSensors();
   const [sortConfig, setSortConfig] = useState(null);
   const [sortModalVisible, setSortModalVisible] = useState(false);
+  const sensorParamProcessado = useRef(null);
+
+  useEffect(() => {
+    const requestedSensorId = Array.isArray(sensorId) ? sensorId[0] : sensorId;
+
+    if (
+      !requestedSensorId ||
+      sensorParamProcessado.current === requestedSensorId
+    ) {
+      return;
+    }
+
+    const requestedSensor = sensors.find(
+      (sensor) => String(sensor.id) === requestedSensorId
+    );
+
+    if (!requestedSensor) {
+      return;
+    }
+
+    sensorParamProcessado.current = requestedSensorId;
+    setSelectedSensor(requestedSensor);
+    setModalVisible(true);
+    router.setParams({ sensorId: undefined });
+  }, [router, sensorId, sensors]);
 
   const sortedSensors = useMemo(() => {
     if (!sortConfig) {

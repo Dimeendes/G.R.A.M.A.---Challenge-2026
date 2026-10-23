@@ -16,7 +16,6 @@ export async function buscarRota(origem, destino) {
       );
     }
 
-    console.log("ROUTES API KEY:", GOOGLE_ROUTES_API_KEY);
     const response = await fetch(
       "https://routes.googleapis.com/directions/v2:computeRoutes",
       {

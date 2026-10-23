@@ -11,17 +11,17 @@ import { buscarRota } from "../services/rotas";
 
 const MOCK_MARKER_POSITIONS = [
   { left: 55, top: 15 },
-  { left: 58, top: 21 },
-  { left: 59, top: 27 },
-  { left: 57, top: 33 },
-  { left: 53, top: 39 },
-  { left: 49, top: 45 },
-  { left: 45, top: 51 },
-  { left: 42, top: 57 },
-  { left: 40, top: 63 },
-  { left: 40, top: 69 },
-  { left: 41, top: 75 },
-  { left: 42, top: 81 },
+  { left: 55, top: 21 },
+  { left: 58, top: 27 },
+  { left: 59, top: 33 },
+  { left: 59, top: 39 },
+  { left: 59, top: 45 },
+  { left: 58, top: 51 },
+  { left: 55, top: 57 },
+  { left: 50, top: 63 },
+  { left: 46, top: 69 },
+  { left: 42, top: 75 },
+  { left: 40, top: 81 },
 ];
  
 export default function Map() {
@@ -231,9 +231,8 @@ export default function Map() {
         resultado = await buscarRota(origem, destino);
       } catch (error) {
         console.error("Erro ao calcular rota:", error);
-        setUsarMapaMockado(true);
         setMensagemMapa(
-          "A API de rotas está indisponível. Exibindo mapa demonstrativo."
+          "Não foi possível calcular a rota. O mapa continua disponível."
         );
         return;
       }
@@ -489,24 +488,40 @@ export default function Map() {
           {/* ================================================= */}
  
           <TouchableOpacity
-            style={styles.routeButton}
-            onPress={calcularRota}
+            style={[
+              styles.routeButton,
+              usarMapaMockado && styles.detailsButton,
+            ]}
+            onPress={() => {
+              if (usarMapaMockado) {
+                router.push({
+                  pathname: "/sensors",
+                  params: { sensorId: String(sensorSelecionado.id) },
+                });
+                return;
+              }
+
+              calcularRota();
+            }}
             disabled={
-              calculandoRota ||
-              !localizacaoUsuario
+              !usarMapaMockado &&
+              (calculandoRota || !localizacaoUsuario)
             }
->
- 
-            {calculandoRota ? (
-<ActivityIndicator
-                color="#FFFFFF"
-              />
+          >
+            {calculandoRota && !usarMapaMockado ? (
+              <ActivityIndicator color="#FFFFFF" />
             ) : (
-<Text style={styles.routeButtonText}>
-                Calcular rota
-</Text>
+              <>
+                <Ionicons
+                  name={usarMapaMockado ? "information-circle-outline" : "navigate-outline"}
+                  size={18}
+                  color="#FFFFFF"
+                />
+                <Text style={styles.routeButtonText}>
+                  {usarMapaMockado ? "Ver mais detalhes" : "Calcular rota"}
+                </Text>
+              </>
             )}
- 
           </TouchableOpacity>
  
           {/* ================================================= */}
@@ -863,6 +878,12 @@ const styles = StyleSheet.create({
  
     alignItems: "center",
     justifyContent: "center",
+    flexDirection: "row",
+    gap: 8,
+  },
+
+  detailsButton: {
+    backgroundColor: "#5E22F3",
   },
  
   routeButtonText: {
